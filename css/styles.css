@@ -92,6 +92,10 @@ body {
   border-radius: 999px; padding: 3px; }
 .is-hidden { display: none !important; }
 
+/* Contenuti alternativi per lingua: si mostra solo quello attivo */
+body[data-lingua="it"] [data-lingua-solo="en"] { display: none !important; }
+body[data-lingua="en"] [data-lingua-solo="it"] { display: none !important; }
+
 .pill-btn {
   font: inherit; font-size: 13px; border: 0; background: none; color: var(--ink-2);
   padding: 6px 11px; border-radius: 999px; cursor: pointer; white-space: nowrap;
@@ -100,6 +104,7 @@ body {
 .pill-btn:hover { background: var(--panel-2); color: var(--ink); }
 .pill-btn.is-on { background: var(--legno); color: #fff; box-shadow: var(--ombra-2); }
 .nav-btn { background: var(--panel); border: 1px solid var(--line); }
+#btn-lingua { font-weight: 700; letter-spacing: .3px; }
 
 .icon-btn {
   font: inherit; font-size: 16px; width: 38px; height: 38px; border-radius: 50%;

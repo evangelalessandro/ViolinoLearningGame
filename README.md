@@ -1,198 +1,199 @@
-# 🎻 ImparaNote Violino
+# 🎻 ImparaNote Violin
 
-Applicazione web per **imparare le note del violino giocando**: riconoscere le note sul
-pentagramma, trovarle sulle corde, allenare l'orecchio. Pensata per bambini, ragazzi e
-adulti, con sfide a tempo per un giocatore, **duelli a turni** e **sfide contemporanee**
-per due giocatori sullo stesso schermo.
+A web app to **learn the violin notes by playing**: recognise notes on the staff, find them
+on the strings, train your ear. Made for kids, teens and adults, with timed challenges for
+one player, **turn-based duels** and **side-by-side challenges** for two players on the same
+screen.
 
-Non serve installare nulla, non serve internet: è tutto statico e i suoni del violino
-vengono sintetizzati in tempo reale dal browser (Web Audio API).
+Available in **English and Italian** (note names switch too: C D E F G A B ⇄ Do Re Mi Fa Sol La Si).
+
+Nothing to install, no internet needed: it is fully static and the violin sound is
+synthesised in real time by the browser (Web Audio API).
+
+🇮🇹 [Leggi questo documento in italiano](README.it.md)
 
 ---
 
-## Come si usa
+## How to use it
 
-**Modo più semplice:** apri `index.html` con un doppio clic (funziona anche da `file://`).
+**Quickest way:** open `index.html` with a double click (it works from `file://` too).
 
-**Modo consigliato** (per tablet e per un comportamento identico a un sito pubblicato):
+**Recommended** (for tablets, and to behave exactly like a published site):
 
 ```powershell
-# dalla cartella del progetto
+# from the project folder
 python -m http.server 8899
-# poi apri http://127.0.0.1:8899/
+# then open http://127.0.0.1:8899/
 ```
 
-L'audio parte al primo tocco/click: è una regola dei browser, non un difetto.
-I record personali vengono salvati nel `localStorage` del browser: non esce nessun dato.
+Sound starts on the first tap/click: that is a browser rule, not a bug.
+Personal bests are stored in the browser's `localStorage`: no data ever leaves your device.
 
 ---
 
-## I giochi
+## The games
 
-| Gioco | Cosa si allena |
+| Game | What it trains |
 |---|---|
-| 🎼 **Leggi la nota** | Compare una nota sul pentagramma: scegli il suo nome (10 domande) |
-| 🎻 **Trova la posizione** | Leggi il nome e tocca il punto giusto sul manico |
-| 👂 **Orecchio musicale** | Il violino suona una nota: riconoscila a orecchio (riascoltabile) |
-| ⏱️ **Sfida a tempo** | 60 secondi di domande miste fra lettura e ascolto |
-| 🔥 **Tastiera a tempo** | 60 secondi per trovare più note possibili sul manico |
-| ⚔️ **Duello a turni** | 2 giocatori, un turno a tempo ciascuno: vince chi fa più punti |
-| 👥 **Sfida contemporanea** | 2 giocatori **insieme**, schermo diviso, ognuno con le sue note |
-| 🏁 **Testa a testa** | Una nota per tutti: chi risponde per primo vince il punto |
+| 🎼 **Read the note** | A note appears on the staff: choose its name (10 questions) |
+| 🎻 **Find the position** | Read the name and tap the right spot on the fingerboard |
+| 👂 **Ear training** | The violin plays a note: recognise it by ear (replayable) |
+| ⏱️ **Time challenge** | 60 seconds of mixed reading and listening questions |
+| 🔥 **Fingerboard race** | 60 seconds to find as many notes as possible on the fingerboard |
+| ⚔️ **Turn-based duel** | 2 players, one timed turn each: the highest score wins |
+| 👥 **Side-by-side challenge** | 2 players **at the same time**, split screen, each with their own notes |
+| 🏁 **Head to head** | One note for both: whoever answers first wins the point |
 
-### 📋 Riepilogo degli errori
+### 📋 Mistakes review
 
-In ogni gioco c'è il pulsante **📋 Errori** (con il numero di sbagli): apre un pannello che
-**mette in pausa** la partita e spiega ogni sbaglio, uno per uno. Lo stesso pannello si
-apre alla fine con **"Rivedi gli errori"**.
+Every game has a **📋 Mistakes** button (with the number of wrong answers): it opens a panel
+that **pauses** the game and explains every mistake, one by one. The same panel opens at the
+end with **"Review the mistakes"**.
 
-Per ogni errore il pannello mostra:
+For each mistake the panel shows:
 
-* il **pentagramma** con la nota giusta;
-* **la tua risposta** e **la risposta giusta**, con la nota scritta per esteso
-  ("Fa♯4 — Fa diesis");
-* **che tipo di sbaglio è stato**, riconosciuto automaticamente:
-  * *Stesso nome, ottava diversa* (Sol3 scambiato per Sol4)
-  * *Alterazione sbagliata* (Fa invece di Fa♯)
-  * *Riga o spazio sbagliato* (nota letta un gradino sopra o sotto)
-  * *Nota a un semitono di distanza*
-  * *Corda sbagliata* o *Dito sbagliato* (per i giochi sul manico)
-* **una spiegazione concreta** ("Hai toccato la corda Mi, ma La3 si suona sulla corda Sol
-  (1º dito)") e **dove si suona** quella nota, più le posizioni alternative;
-* il **confronto delle frequenze** (Fa = 349,2 Hz · Fa♯ = 370,0 Hz);
-* il pulsante **🔊 Confronta**, che suona prima la nota giusta e poi quella sbagliata, così
-  si sente la differenza.
+* the **staff** with the right note;
+* **your answer** and the **right answer**, with the note spelled out ("F♯4 — F sharp");
+* **what kind of mistake it was**, recognised automatically:
+  * *Same name, different octave* (G3 mistaken for G4)
+  * *Wrong accidental* (F instead of F♯)
+  * *Wrong line or space* (note read one step too high or too low)
+  * *A semitone away*
+  * *Wrong string* or *Wrong finger* (for the fingerboard games)
+* **a concrete explanation** ("You tapped the E string, but A3 is played on the G string
+  (1st finger)") and **where that note is played**, plus alternative positions;
+* the **frequency comparison** (F = 349.2 Hz · F♯ = 370.0 Hz);
+* a **🔊 Compare** button that plays the right note first and then the wrong one, so you can
+  hear the difference.
 
-In testa al pannello: quante giuste, quante sbagliate, la precisione e — se un tipo di
-errore si ripete — **l'errore più frequente** con il consiglio per non ripeterlo.
+At the top of the panel: how many right, how many wrong, the accuracy, and — if a kind of
+mistake repeats — the **most frequent mistake** with advice on how to avoid it.
 
-### Punteggio
+### Scoring
 
-10 punti a risposta corretta, più un bonus **serie** (3 risposte di fila: +5, 5 di fila: +10)
-e un bonus **velocità** (fino a +8). Il record di ogni gioco e livello viene salvato.
+10 points per correct answer, plus a **streak bonus** (3 in a row: +5, 5 in a row: +10) and a
+**speed bonus** (up to +8). Each game's best score per level is saved.
 
-### I comandi delle sfide a due
+### Two-player controls
 
-Si può giocare **toccando i pulsanti** sullo schermo (perfetto su un tablet fra due
-persone) oppure con la tastiera:
+You can play by **tapping the buttons** on screen (great for two people on one tablet) or
+with the keyboard:
 
-| | Tasti |
+| | Keys |
 |---|---|
-| Giocatore 1 | `A` `S` `D` `F` |
-| Giocatore 2 | `J` `K` `L` `Ò` |
+| Player 1 | `A` `S` `D` `F` |
+| Player 2 | `J` `K` `L` `Ò` |
 
-Nel gioco singolo si risponde con `1` `2` `3` `4` (o toccando), `Spazio` riascolta la nota.
+In single-player games you answer with `1` `2` `3` `4` (or by tapping), `Space` replays the note.
 
 ---
 
-## Livelli
+## Levels
 
-| Livello | Contenuto |
+| Level | Content |
 |---|---|
-| 🧒 **Bambini** | Corde vuote e prime note, 1ª posizione, solo note naturali (Sol3–La4) |
-| 🎵 **Ragazzi** | Tutta la 1ª posizione con note naturali (Sol3–Mi5) |
-| 🎼 **Adulti** | 1ª posizione completa, con diesis e bemolli, tagli addizionali |
-| 🏆 **Maestri** | 1ª–3ª posizione, alterazioni, registro acuto fino al Do6 |
+| 🧒 **Kids** | Open strings and the first notes, 1st position, naturals only (G3–A4) |
+| 🎵 **Teens** | The whole 1st position with natural notes (G3–E5) |
+| 🎼 **Adults** | Complete 1st position, with sharps and flats, ledger lines |
+| 🏆 **Masters** | 1st–3rd position, accidentals, high register up to C6 |
 
-La voce **📚 Studia** mostra il manico interattivo (tocca una pallina: senti la nota e la
-vedi sul pentagramma), l'accordatura Sol–Re–La–Mi e la tabella delle note di ogni corda.
-
----
-
-## Come funziona il modello musicale
-
-* **Nomi italiani** — le note si chiamano sempre **Do, Re, Mi, Fa, Sol, La, Si**, con
-  ♯/♭ accanto al nome (e la forma parlata *"Fa diesis"*, *"Si bemolle"* nei suggerimenti).
-  Il numero dopo il nome indica l'ottava: **La4** = 440 Hz, il La di riferimento.
-  Nessuna notazione anglosassone (A, B, C…) compare nell'interfaccia.
-* **Corda vuota e dita** — in 1ª posizione il *k*-esimo dito suona il grado diatonico
-  *k* sopra la corda vuota; ogni dito può poi suonare anche un semitono sotto (dito
-  "basso", es. Si♭) o sopra (dito "alto", es. Fa♯). Da qui nascono tutte le alterazioni
-  in modo coerente con la diteggiatura reale.
-  * Es. corda Re: 0 = Re4, 1º = Mi4, 2º = Fa4/Fa♯4, 3º = Sol4, 4º = La4.
-  * Sulla corda Mi il 1º dito è a un semitono (Fa5), non a due.
-* **Posizioni** — in posizione *P* il 1º dito suona il grado *P* sopra la corda vuota
-  (3ª posizione sulla corda Sol: 1º dito = Do4).
-* **La stessa nota su più corde** — Re4 è la corda Re vuota *oppure* il 4º dito sulla
-  corda Sol: l'app accetta entrambe e le spiega nel feedback.
-* **Nomi uguali in ottave diverse** — Sol3 e Sol4 si chiamano entrambi "Sol": per questo
-  le risposte a scelta hanno sempre nomi tutti diversi, e nel gioco *Trova la posizione*
-  la richiesta mostra anche il pentagramma e l'ottava, così il punto da toccare è
-  inequivocabile.
-* **Il pentagramma** — la chiave di violino è un disegno vettoriale allineato
-  geometricamente alla riga del Sol (nessuna dipendenza da font musicali installati);
-  ogni nota è posizionata contando righe e spazi a partire dal Mi4 (1ª riga), con i
-  tagli addizionali calcolati automaticamente.
+The **📚 Study** section shows the interactive fingerboard (tap a dot: you hear the note and
+see it on the staff), the tuning G–D–A–E and the table of the notes on each string.
 
 ---
 
-## Struttura del progetto
+## How the musical model works
+
+* **Note names** — Italian mode uses **Do Re Mi Fa Sol La Si**, English mode uses
+  **C D E F G A B**, with ♯/♭ next to the name (and the spoken form *"F sharp"*,
+  *"B flat"* in the tooltips). The number after the name is the octave: **A4** = 440 Hz, the
+  reference A.
+* **Open string and fingers** — in 1st position the *k*-th finger plays the diatonic degree
+  *k* above the open string; each finger can also play a semitone lower (a "low" finger,
+  e.g. B♭) or higher (a "high" finger, e.g. F♯). Every accidental comes out of this, matching
+  real violin fingering.
+  * E.g. on the D string: 0 = D4, 1st = E4, 2nd = F4/F♯4, 3rd = G4, 4th = A4.
+  * On the E string the 1st finger is one semitone up (F5), not two.
+* **Positions** — in position *P* the 1st finger plays degree *P* above the open string
+  (3rd position on the G string: 1st finger = C4).
+* **The same note on several strings** — D4 is the open D string *or* the 4th finger on the
+  G string: the app accepts both and explains them in the feedback.
+* **Same name in different octaves** — G3 and G4 are both called "G": that is why
+  multiple-choice answers always have distinct names, and why the *Find the position*
+  question also shows the staff and the octave, making the spot to tap unambiguous.
+* **The staff** — the treble clef is a vector drawing aligned geometrically to the G line
+  (no dependency on installed music fonts); every note is placed by counting lines and
+  spaces from E4 (bottom line), with ledger lines computed automatically.
+
+---
+
+## Project structure
 
 ```
-index.html            struttura delle schermate e guida
-css/styles.css        stile (tema chiaro/scuro automatico, responsive)
-js/theory.js          note, frequenze, corde, diteggiature, posizioni, livelli
-js/audio.js           sintesi del violino (Web Audio), effetti, accordatura
-js/staff.js           disegno del pentagramma in chiave di violino (SVG)
-js/violin.js          manico del violino interattivo (SVG)
-js/games.js           motore di gioco: domande, punteggi, tempi, turni (nessun DOM)
-js/app.js             interfaccia, schermate, collegamento con il motore
-test/test-motore.js        verifica automatica della logica
-test/test-interfaccia.js   verifica dell'interfaccia con click reali (Chrome)
+index.html            screen structure and the bilingual guide
+css/styles.css        styling (automatic light/dark theme, responsive)
+js/i18n.js            interface translations (Italian / English) and language switching
+js/theory.js          notes, frequencies, strings, fingerings, positions, levels
+js/audio.js           violin sound synthesis (Web Audio), effects, tuning
+js/staff.js           treble staff drawing (SVG)
+js/violin.js          interactive violin fingerboard (SVG)
+js/games.js           game engine: questions, scoring, timing, turns (no DOM)
+js/app.js             interface, screens, wiring with the engine
+test/test-motore.js          logic test suite
+test/test-interfaccia.js     interface test suite (real mouse events, Chrome)
 ```
 
-Nessuna libreria esterna, nessun passaggio di build.
+No external libraries, no build step.
 
 ---
 
-## Verifiche
+## Tests
 
 ```powershell
-node test/test-motore.js          # logica: note, diteggiature, domande, partite
-node test/test-interfaccia.js     # interfaccia: click veri del mouse (serve Chrome)
+node test/test-motore.js          # logic: notes, fingerings, questions, full games
+node test/test-interfaccia.js     # interface: real mouse clicks (needs Chrome)
 ```
 
-`test-motore.js` esegue ~15.800 controlli: nomi e frequenze delle note, diteggiature
-della 1ª posizione, coerenza di ogni livello (ogni nota delle domande deve essere davvero
-suonabile e avere una pallina cliccabile sul manico), generazione delle domande (una sola
-risposta giusta, opzioni con nomi tutti diversi), riconoscimento dei tipi di errore nel
-riepilogo e **pausa** (l'orologio non consuma tempo mentre si legge), più la simulazione di
-**tutte le 32 combinazioni gioco × livello** fino alla fine della partita.
+`test-motore.js` runs ~15,800 checks: note names and frequencies, 1st-position fingerings,
+consistency of every level (every note asked must really be playable and have a clickable dot
+on the fingerboard), question generation (one right answer only, options with distinct names),
+recognition of the mistake types in the review, the **pause** (the clock does not tick while
+you read), and a simulation of **all 32 game × level combinations** played to the end.
 
-`test-interfaccia.js` apre l'app in Chrome headless e la usa con **eventi mouse reali**
-(cioè passando dal controllo di sovrapposizione degli elementi), verificando che nessun
-velo o modale dimenticata copra l'interfaccia, che ogni pulsante risponda davvero, che il
-riepilogo degli errori si apra e metta in pausa l'orologio, e che non compaia mai la
-scritta `undefined` a schermo (sintomo tipico di una proprietà scritta con un nome diverso
-da quello usato nell'interfaccia).
-Per eseguirlo serve l'app servita via HTTP:
+`test-interfaccia.js` opens the app in headless Chrome and uses it with **real mouse events**
+(so it goes through element hit-testing), checking that no forgotten veil or modal covers the
+interface, that every button really responds, that the mistakes review opens and pauses the
+clock, that the **language button** translates the whole interface and the note names, and
+that the word `undefined` never appears on screen (the classic symptom of a property spelled
+differently in the interface than where it is defined). It needs the app served over HTTP:
 
 ```powershell
 python -m http.server 8899
 node test/test-interfaccia.js
 ```
 
-> Perché due test: un click fatto con `element.click()` da JavaScript funziona **anche**
-> sotto un velo trasparente, quindi non basta a garantire che l'app sia usabile. Solo un
-> click vero se ne accorge.
+> Why two test suites: a click made with JavaScript's `element.click()` works **even under a
+> transparent veil**, so it cannot prove the app is usable. Only a real click notices.
 
 ---
 
-## Note tecniche
+## Technical notes
 
-* Browser moderni (Chrome, Edge, Firefox, Safari): usa `<script>` classici, quindi
-  funziona anche aperto da `file://`.
-* Il manico mostra le posizioni come "tasti" virtuali di semitono: cliccare una pallina
-  identifica la nota senza ambiguità e il numero dentro è il dito che la suona.
-* La sfida contemporanea tiene uno stato separato per ogni giocatore: la risposta di uno
-  non blocca l'altro.
-* Il tema scuro si attiva automaticamente con le preferenze di sistema.
+* Modern browsers (Chrome, Edge, Firefox, Safari): it uses classic `<script>` tags, so it
+  works when opened from `file://` as well.
+* The fingerboard shows positions as virtual semitone "frets": tapping a dot identifies the
+  note unambiguously and the number inside is the finger that plays it.
+* The side-by-side challenge keeps a separate state for each player: one player's answer does
+  not block the other.
+* The dark theme follows the system preference.
+* The interface language is remembered in `localStorage`; on first visit it follows the
+  browser language (Italian browsers get Italian, everyone else gets English).
 
-## Crediti
+## Credits
 
-* Chiave di violino: disegno vettoriale di **pubblico dominio** ricavato da
+* Treble clef: **public domain** vector drawing taken from
   [Treble clef.svg](https://commons.wikimedia.org/wiki/File:Treble_clef.svg)
-  (Wikimedia Commons, PD-self). Nel file originale la chiave è disegnata insieme al
-  pentagramma, quindi è stato possibile ricavare la trasformazione esatta per allinearla
-  alla riga del Sol.
-* Tutto il resto (codice, sintesi sonora, grafica del manico) è originale.
+  (Wikimedia Commons, PD-self). In the original file the clef is drawn together with the
+  staff, which made it possible to derive the exact transformation that aligns it to the
+  G line.
+* Everything else (code, sound synthesis, fingerboard graphics, translations) is original.

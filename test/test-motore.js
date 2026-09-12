@@ -269,6 +269,56 @@ titolo('7. Pausa e ripresa (per consultare il riepilogo)');
   s2.fermaTimer();
 })();
 
+/* ------------------------------------------------- 8. nomi in inglese */
+titolo('8. Nomi delle note in inglese');
+(function () {
+  T.setLingua('en');
+  ok(T.solfege(T.note('F', 4, 1)) === 'F♯', 'diesis in inglese');
+  ok(T.solfege(T.note('B', 3, -1)) === 'B♭', 'bemolle in inglese');
+  ok(T.solfegeOttava(T.note('G', 3)) === 'G3', 'nome con ottava in inglese');
+  ok(T.solfegeEsteso(T.note('B', 3, -1)) === 'B flat', 'alterazione a parole in inglese');
+  ok(T.solfegeEsteso(T.note('F', 4, 1)) === 'F sharp', 'diesis a parole in inglese');
+  const fDiesis = T.placementsForMidi(T.midi(T.note('F', 4, 1)), 1).filter(function (r) {
+    return r.pl.stringId === 'D' && r.pl.finger === 2 && r.delta === 1;
+  })[0];
+  ok(fDiesis && T.describePlacement(fDiesis.pl, fDiesis.delta) === '2nd finger (high) on the D string',
+    'diteggiatura in inglese: ' + (fDiesis ? T.describePlacement(fDiesis.pl, fDiesis.delta) : 'assente'));
+  ok(T.describePlacement(T.allPlacements(1)[0], 0) === 'open G string', 'corda vuota in inglese');
+  ok(T.nomeCorda('G') === 'G' && T.nomeCorda('E') === 'E', 'nomi delle corde in inglese');
+  ok(T.etichettaCorda('D') === 'III string', 'etichetta della corda in inglese');
+  ok(T.nomeLivello('bambini') === 'Kids' && T.nomeLivello('maestri') === 'Masters', 'livelli in inglese');
+  ok(T.descLivello('bambini').indexOf('Open strings') === 0, 'descrizione del livello in inglese');
+  ok(G.nomeModo(G.MODI.leggi) === 'Read the note', 'nome del gioco in inglese');
+  ok(G.nomeModo(G.MODI.testa) === 'Head to head', 'secondo gioco in inglese');
+  ok(G.medaglia(90, 150).nome === 'Silver violin', 'medaglia in inglese');
+  ok(G.medaglia(30, 20).nome === 'A little more practice', 'medaglia finale in inglese');
+
+  // l'analisi degli errori deve funzionare anche in inglese
+  const s = new G.Sessione({ modo: 'leggi', livello: 'ragazzi' });
+  s.storico = [
+    { numero: 1, tipo: 'nome', nota: T.note('F', 4, 1), opzioni: [], risposta: T.note('F', 4, 0), corretto: false, giocatore: 0 },
+    { numero: 2, tipo: 'posizione', nota: T.note('A', 3, 0), opzioni: [], soluzioni: [], risposta: null, corretto: false, giocatore: 0,
+      slot: { stringId: 'E', semis: 5, midi: 81, primary: { pl: { stringId: 'E', finger: 3, position: 1, open: false, baseMidi: 81 }, delta: 0 } } }
+  ];
+  const r = G.riepilogaErrori(s);
+  ok(r.voci[0].categoria === 'alterazione', 'categoria riconosciuta in inglese');
+  ok(/sharp/.test(r.voci[0].spiegazione), 'spiegazione in inglese: ' + r.voci[0].spiegazione);
+  ok(/F♯4 is played/.test(r.voci[0].spiegazione), 'indica come si suona in inglese');
+  ok(/high/.test(r.voci[0].spiegazione), 'indica il dito alto in inglese');
+  ok(r.voci[1].categoria === 'corda' && /E string/.test(r.voci[1].spiegazione),
+    'corda sbagliata in inglese: ' + r.voci[1].spiegazione);
+  ok(r.voci[1].tipoNome === 'Find the position', 'nome del tipo di domanda in inglese');
+
+  // i due giocatori predefiniti seguono la lingua
+  const s2 = new G.Sessione({ modo: 'duello', livello: 'ragazzi' });
+  ok(s2.giocatori[0].nome === 'Player 1' && s2.giocatori[1].nome === 'Player 2',
+    'nomi predefiniti dei giocatori in inglese');
+
+  T.setLingua('it');
+  ok(T.solfege(T.note('F', 4, 1)) === 'Fa♯', 'ritorno all\'italiano');
+  ok(G.nomeModo(G.MODI.leggi) === 'Leggi la nota', 'gioco di nuovo in italiano');
+})();
+
 /* ------------------------------------------------------------------ esito */
 console.log('\n' + '═'.repeat(64));
 console.log(fallite === 0

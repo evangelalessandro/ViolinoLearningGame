@@ -12,55 +12,75 @@ window.Gioco = (function () {
   /* ------------------------------------------------------------ definizione */
   const MODI = {
     leggi: {
-      chiave: 'leggi', nome: 'Leggi la nota', icona: '🎼', tipo: 'nome', layout: 'solo',
+      chiave: 'leggi', nome: 'Leggi la nota', nomeEn: 'Read the note', icona: '🎼', tipo: 'nome', layout: 'solo',
       domande: 10, giocatori: 1, grandi: true,
       desc: 'Guarda la nota sul pentagramma e scegli il suo nome.',
-      aiuto: 'Sul pentagramma in chiave di violino la 1ª riga in basso è il Mi4.'
+      descEn: 'Look at the note on the staff and choose its name.',
+      aiuto: 'Sul pentagramma in chiave di violino la 1ª riga in basso è il Mi4.',
+      aiutoEn: 'On the treble staff the bottom line is E4.'
     },
     trova: {
-      chiave: 'trova', nome: 'Trova la posizione', icona: '🎻', tipo: 'posizione', layout: 'solo',
+      chiave: 'trova', nome: 'Trova la posizione', nomeEn: 'Find the position', icona: '🎻', tipo: 'posizione', layout: 'solo',
       domande: 10, giocatori: 1, grandi: true,
       desc: 'Leggi il nome della nota e toccala al posto giusto sul manico.',
-      aiuto: 'Tocca la pallina giusta: il numero è il dito che usa il violinista.'
+      descEn: 'Read the note name and tap the right spot on the fingerboard.',
+      aiuto: 'Tocca la pallina giusta: il numero è il dito che usa il violinista.',
+      aiutoEn: 'Tap the right dot: the number is the finger the violinist uses.'
     },
     orecchio: {
-      chiave: 'orecchio', nome: 'Orecchio musicale', icona: '👂', tipo: 'orecchio', layout: 'solo',
+      chiave: 'orecchio', nome: 'Orecchio musicale', nomeEn: 'Ear training', icona: '👂', tipo: 'orecchio', layout: 'solo',
       domande: 10, giocatori: 1, grandi: true,
       desc: 'Ascolta la nota del violino e indovina che nome ha.',
-      aiuto: 'Puoi riascoltare la nota quante volte vuoi con il pulsante Ascolta.'
+      descEn: 'Listen to the violin note and guess its name.',
+      aiuto: 'Puoi riascoltare la nota quante volte vuoi con il pulsante Ascolta.',
+      aiutoEn: 'You can play the note again as many times as you like.'
     },
     tempo: {
-      chiave: 'tempo', nome: 'Sfida a tempo', icona: '⏱️', tipo: 'misto', layout: 'solo',
+      chiave: 'tempo', nome: 'Sfida a tempo', nomeEn: 'Time challenge', icona: '⏱️', tipo: 'misto', layout: 'solo',
       secondi: 60, giocatori: 1, grandi: true,
       desc: 'Sessanta secondi per leggere più note possibili. Ogni errore costa tempo!',
-      aiuto: 'Le domande mescolano lettura sul pentagramma e ascolto.'
+      descEn: 'Sixty seconds to read as many notes as you can. Every mistake costs time!',
+      aiuto: 'Le domande mescolano lettura sul pentagramma e ascolto.',
+      aiutoEn: 'Questions mix staff reading and listening.'
     },
     tastiera: {
-      chiave: 'tastiera', nome: 'Tastiera a tempo', icona: '🔥', tipo: 'posizione', layout: 'solo',
+      chiave: 'tastiera', nome: 'Tastiera a tempo', nomeEn: 'Fingerboard race', icona: '🔥', tipo: 'posizione', layout: 'solo',
       secondi: 60, giocatori: 1, grandi: true,
       desc: 'Trova il maggior numero di note sul manico in sessanta secondi.',
-      aiuto: 'Le note compaiono come nome: tu toccale sulla corda giusta.'
+      descEn: 'Find as many notes on the fingerboard as you can in sixty seconds.',
+      aiuto: 'Le note compaiono come nome: tu toccale sulla corda giusta.',
+      aiutoEn: 'Notes appear as a name: tap them on the right string.'
     },
     duello: {
-      chiave: 'duello', nome: 'Duello a turni', icona: '⚔️', tipo: 'nome', layout: 'turni',
+      chiave: 'duello', nome: 'Duello a turni', nomeEn: 'Turn-based duel', icona: '⚔️', tipo: 'nome', layout: 'turni',
       secondi: 30, giocatori: 2, grandi: true,
       desc: 'Due giocatori a turno: trenta secondi ciascuno, vince chi segna di più.',
-      aiuto: 'Prima gioca il Giocatore 1, poi passa il dispositivo al Giocatore 2.'
+      descEn: 'Two players in turns: thirty seconds each, the highest score wins.',
+      aiuto: 'Prima gioca il Giocatore 1, poi passa il dispositivo al Giocatore 2.',
+      aiutoEn: 'Player 1 goes first, then pass the device to Player 2.'
     },
     contemporanea: {
-      chiave: 'contemporanea', nome: 'Sfida contemporanea', icona: '👥', tipo: 'nome', layout: 'split',
+      chiave: 'contemporanea', nome: 'Sfida contemporanea', nomeEn: 'Side-by-side challenge', icona: '👥', tipo: 'nome', layout: 'split',
       secondi: 60, giocatori: 2, grandi: true,
       desc: 'Due giocatori insieme sullo stesso schermo: ognuno ha le sue note e i suoi tasti.',
-      aiuto: 'Giocatore 1 usa A S D F, Giocatore 2 usa J K L ò. Si può giocare anche toccando.'
+      descEn: 'Two players at the same time on one screen: each has their own notes and keys.',
+      aiuto: 'Giocatore 1 usa A S D F, Giocatore 2 usa J K L ò. Si può giocare anche toccando.',
+      aiutoEn: 'Player 1 uses A S D F, Player 2 uses J K L ò. You can also just tap.'
     },
     testa: {
-      chiave: 'testa', nome: 'Testa a testa', icona: '🏁', tipo: 'nome', layout: 'race',
+      chiave: 'testa', nome: 'Testa a testa', nomeEn: 'Head to head', icona: '🏁', tipo: 'nome', layout: 'race',
       secondi: 60, giocatori: 2, grandi: true,
       desc: 'Stessa nota per tutti: chi risponde per primo vince il punto.',
-      aiuto: 'Chi sbaglia resta bloccato fino alla nota successiva.'
+      descEn: 'The same note for both: whoever answers first wins the point.',
+      aiuto: 'Chi sbaglia resta bloccato fino alla nota successiva.',
+      aiutoEn: 'A wrong answer locks you out until the next note.'
     }
   };
   const ORDINE = ['leggi', 'trova', 'orecchio', 'tempo', 'tastiera', 'duello', 'contemporanea', 'testa'];
+
+  function nomeModo(m) { return (T.getLingua() === 'en' && m.nomeEn) ? m.nomeEn : m.nome; }
+  function descModo(m) { return (T.getLingua() === 'en' && m.descEn) ? m.descEn : m.desc; }
+  function aiutoModo(m) { return (T.getLingua() === 'en' && m.aiutoEn) ? m.aiutoEn : m.aiuto; }
 
   const TASTI = [
     ['a', 's', 'd', 'f', 'g', 'h'],
@@ -91,9 +111,10 @@ window.Gioco = (function () {
     if (cfg.domande) this.modo = Object.assign({}, this.modo, { domande: cfg.domande });
 
     const nomi = cfg.nomi || [];
+    const predefinito = (T.getLingua() === 'en') ? 'Player ' : 'Giocatore ';
     this.giocatori = [];
     for (let i = 0; i < (this.modo.giocatori || 1); i++) {
-      this.giocatori.push(nuovoGiocatore(nomi[i] || ('Giocatore ' + (i + 1))));
+      this.giocatori.push(nuovoGiocatore(nomi[i] || (predefinito + (i + 1))));
     }
 
     this.perGiocatore = this.modo.layout === 'split';
@@ -488,71 +509,203 @@ window.Gioco = (function () {
 
   /* ---------------------------------------------------------------- medaglie */
   function medaglia(precisione, punti) {
-    if (precisione >= 95 && punti >= 120) return { n: 3, nome: 'Violino d\'oro', icona: '🥇' };
-    if (precisione >= 80) return { n: 2, nome: 'Violino d\'argento', icona: '🥈' };
-    if (precisione >= 55) return { n: 1, nome: 'Violino di bronzo', icona: '🥉' };
-    return { n: 0, nome: 'Ancora un po\' di studio', icona: '🎯' };
+    const it = T.getLingua() !== 'en';
+    if (precisione >= 95 && punti >= 120) {
+      return { n: 3, nome: it ? 'Violino d\'oro' : 'Gold violin', icona: '🥇' };
+    }
+    if (precisione >= 80) {
+      return { n: 2, nome: it ? 'Violino d\'argento' : 'Silver violin', icona: '🥈' };
+    }
+    if (precisione >= 55) {
+      return { n: 1, nome: it ? 'Violino di bronzo' : 'Bronze violin', icona: '🥉' };
+    }
+    return { n: 0, nome: it ? 'Ancora un po\' di studio' : 'A little more practice', icona: '🎯' };
   }
 
   /* ------------------------------------------------- riepilogo degli errori */
   /* Analizza ogni risposta sbagliata e prova a spiegare che tipo di sbaglio è
      stato: ottava, alterazione, riga del pentagramma, corda, dito… */
   const CATEGORIE = {
-    ottava: {
-      titolo: 'Stesso nome, ottava diversa',
-      rimedio: 'Il nome è giusto ma la nota è più acuta o più grave: guarda quanto in alto sta la testa della nota sul pentagramma.'
+    it: {
+      ottava: {
+        titolo: 'Stesso nome, ottava diversa',
+        rimedio: 'Il nome è giusto ma la nota è più acuta o più grave: guarda quanto in alto sta la testa della nota sul pentagramma.'
+      },
+      alterazione: {
+        titolo: 'Alterazione sbagliata',
+        rimedio: 'Il ♯ alza di un semitono e il ♭ lo abbassa: sul violino il dito si sposta appena, restando sulla stessa corda.'
+      },
+      pentagramma: {
+        titolo: 'Riga o spazio sbagliato',
+        rimedio: 'Conta righe e spazi partendo dal Mi4, che sta sulla 1ª riga in basso: ogni gradino è una riga o uno spazio.'
+      },
+      semitono: {
+        titolo: 'Nota a un semitono di distanza',
+        rimedio: 'Sono due note vicinissime: sul manico le separa una sola pallina.'
+      },
+      lontana: {
+        titolo: 'Nota molto diversa',
+        rimedio: 'Prima di rispondere guarda dove sta la nota sul pentagramma, poi decidi il nome.'
+      },
+      corda: {
+        titolo: 'Corda sbagliata',
+        rimedio: 'Le corde sono Sol, Re, La, Mi: dalla più grave alla più acuta si sale di cinque note.'
+      },
+      dito: {
+        titolo: 'Dito sbagliato',
+        rimedio: 'Ogni pallina è un semitono: conta i semitoni dalla corda vuota fino alla nota.'
+      }
     },
-    alterazione: {
-      titolo: 'Alterazione sbagliata',
-      rimedio: 'Il ♯ alza di un semitono e il ♭ lo abbassa: sul violino il dito si sposta appena, restando sulla stessa corda.'
-    },
-    pentagramma: {
-      titolo: 'Riga o spazio sbagliato',
-      rimedio: 'Conta righe e spazi partendo dal Mi4, che sta sulla 1ª riga in basso: ogni gradino è una riga o uno spazio.'
-    },
-    semitono: {
-      titolo: 'Nota a un semitono di distanza',
-      rimedio: 'Sono due note vicinissime: sul manico le separa una sola pallina.'
-    },
-    lontana: {
-      titolo: 'Nota molto diversa',
-      rimedio: 'Prima di rispondere guarda dove sta la nota sul pentagramma, poi decidi il nome.'
-    },
-    corda: {
-      titolo: 'Corda sbagliata',
-      rimedio: 'Le corde sono Sol, Re, La, Mi: dalla più grave alla più acuta si sale di cinque note.'
-    },
-    dito: {
-      titolo: 'Dito sbagliato',
-      rimedio: 'Ogni pallina è un semitono: conta i semitoni dalla corda vuota fino alla nota.'
+    en: {
+      ottava: {
+        titolo: 'Same name, different octave',
+        rimedio: 'The name is right but the note is higher or lower: check how high the note head sits on the staff.'
+      },
+      alterazione: {
+        titolo: 'Wrong accidental',
+        rimedio: 'A ♯ raises the note by a semitone and a ♭ lowers it: on the violin the finger moves only slightly, on the same string.'
+      },
+      pentagramma: {
+        titolo: 'Wrong line or space',
+        rimedio: 'Count lines and spaces starting from E4 on the bottom line: every step is one line or one space.'
+      },
+      semitono: {
+        titolo: 'A semitone away',
+        rimedio: 'These two notes are very close: on the fingerboard only one dot separates them.'
+      },
+      lontana: {
+        titolo: 'A very different note',
+        rimedio: 'Before answering, look at where the note sits on the staff, then decide its name.'
+      },
+      corda: {
+        titolo: 'Wrong string',
+        rimedio: 'The strings are G, D, A, E: from the lowest to the highest you go up by five notes.'
+      },
+      dito: {
+        titolo: 'Wrong finger',
+        rimedio: 'Every dot is a semitone: count the semitones from the open string up to the note.'
+      }
     }
   };
 
-  const NOMI_TIPO = { nome: 'Leggi la nota', posizione: 'Trova la posizione', orecchio: 'Orecchio musicale' };
+  const NOMI_TIPO = {
+    it: { nome: 'Leggi la nota', posizione: 'Trova la posizione', orecchio: 'Orecchio musicale' },
+    en: { nome: 'Read the note', posizione: 'Find the position', orecchio: 'Ear training' }
+  };
+
+  /* Frasi delle spiegazioni, per lingua. */
+  const FRASI = {
+    it: {
+      nonSuonabile: 'non suonabile in questa posizione',
+      nessunaRisposta: 'nessuna risposta',
+      nonToccato: 'Non hai toccato nessun punto del manico.',
+      nonScelto: 'Non hai scelto nessun nome.',
+      puntoImprecisato: 'punto imprecisato',
+      corda: function (c, nota, cg, dove) {
+        return 'Hai toccato la corda ' + c + ', ma ' + nota + ' si suona sulla corda ' + cg + ' (' + dove + ').';
+      },
+      dito: function (nota, dove, scelto) {
+        return 'Corda giusta, punto sbagliato: ' + nota + ' si suona con il ' + dove +
+          ', mentre tu hai toccato il ' + scelto + '.';
+      },
+      ottava: function (scelta, giusta, dove) {
+        return 'Hai scelto ' + scelta + ' invece di ' + giusta + ': stesso nome, ottava diversa. ' +
+          giusta + ' si suona con ' + dove + '.';
+      },
+      alterazioneManca: function (alter) {
+        return 'mancava l\'alterazione (' + alter + ').';
+      },
+      alterazioneExtra: function () { return 'l\'alterazione non ci voleva.'; },
+      alterazione: function (scelta, giusta, pezzo, dove) {
+        return 'Hai scelto ' + scelta + ' invece di ' + giusta + ': ' + pezzo + ' ' + giusta +
+          ' si suona con ' + dove + '.';
+      },
+      pentagramma: function (scelta, giusta, alto, dove) {
+        return 'Hai letto ' + scelta + ' invece di ' + giusta + ': sono su riga e spazio vicini. ' +
+          giusta + ' sta ' + (alto ? 'un gradino più in alto' : 'un gradino più in basso') +
+          ' e si suona con ' + dove + '.';
+      },
+      semitono: function (scelta, giusta, n, dove) {
+        return 'Hai scelto ' + scelta + ' invece di ' + giusta + ': ' +
+          (n === 1 ? 'un semitono' : 'due semitoni') + ' di differenza. ' + giusta +
+          ' si suona con ' + dove + '.';
+      },
+      lontana: function (scelta, giusta, n, dove) {
+        return 'Hai scelto ' + scelta + ' invece di ' + giusta + ' (' + n + ' semitoni di distanza). ' +
+          giusta + ' si suona con ' + dove + '.';
+      }
+    },
+    en: {
+      nonSuonabile: 'not playable in this position',
+      nessunaRisposta: 'no answer',
+      nonToccato: 'You did not tap any spot on the fingerboard.',
+      nonScelto: 'You did not choose a name.',
+      puntoImprecisato: 'an unclear spot',
+      corda: function (c, nota, cg, dove) {
+        return 'You tapped the ' + c + ' string, but ' + nota + ' is played on the ' + cg +
+          ' string (' + dove + ').';
+      },
+      dito: function (nota, dove, scelto) {
+        return 'Right string, wrong spot: ' + nota + ' is played with the ' + dove +
+          ', but you tapped the ' + scelto + '.';
+      },
+      ottava: function (scelta, giusta, dove) {
+        return 'You chose ' + scelta + ' instead of ' + giusta + ': same name, different octave. ' +
+          giusta + ' is played with ' + dove + '.';
+      },
+      alterazioneManca: function (alter) {
+        return 'the accidental was missing (' + alter + ').';
+      },
+      alterazioneExtra: function () { return 'there should be no accidental.'; },
+      alterazione: function (scelta, giusta, pezzo, dove) {
+        return 'You chose ' + scelta + ' instead of ' + giusta + ': ' + pezzo + ' ' + giusta +
+          ' is played with ' + dove + '.';
+      },
+      pentagramma: function (scelta, giusta, alto, dove) {
+        return 'You read ' + scelta + ' instead of ' + giusta + ': they sit on a neighbouring line and space. ' +
+          giusta + ' is one step ' + (alto ? 'higher' : 'lower') +
+          ' and is played with ' + dove + '.';
+      },
+      semitono: function (scelta, giusta, n, dove) {
+        return 'You chose ' + scelta + ' instead of ' + giusta + ': ' +
+          (n === 1 ? 'one semitone' : 'two semitones') + ' apart. ' + giusta +
+          ' is played with ' + dove + '.';
+      },
+      lontana: function (scelta, giusta, n, dove) {
+        return 'You chose ' + scelta + ' instead of ' + giusta + ' (' + n + ' semitones apart). ' +
+          giusta + ' is played with ' + dove + '.';
+      }
+    }
+  };
+
+  function frasi() { return FRASI[T.getLingua()] || FRASI.it; }
 
   function categoria(nome) {
-    return CATEGORIE[nome] || CATEGORIE.lontana;
+    const tab = CATEGORIE[T.getLingua()] || CATEGORIE.it;
+    return tab[nome] || tab.lontana;
   }
 
-  /** Descrizione breve del dito: "2º dito alto", "corda vuota". */
+  /** Descrizione breve del dito: "2º dito alto", "corda vuota" / "2nd finger high". */
   function ditoCompatto(pl, delta) {
-    if (!pl || pl.open) return 'corda vuota';
-    const variante = delta > 0 ? ' alto' : delta < 0 ? ' basso' : '';
-    const pos = pl.position > 1 ? ' — ' + pl.position + 'ª posizione' : '';
-    return pl.finger + 'º dito' + variante + pos;
+    const it = T.getLingua() !== 'en';
+    if (!pl || pl.open) return T.fingerName(0);
+    const variante = delta > 0 ? (it ? ' alto' : ' high') : delta < 0 ? (it ? ' basso' : ' low') : '';
+    const pos = pl.position > 1 ? ' — ' + T.posizioneTesto(pl.position) : '';
+    return (it ? pl.finger + 'º dito' : T.dita()[pl.finger]) + variante + pos;
   }
 
   function analizzaErrore(v, s) {
+    const F = frasi();
     const L = T.LEVELS[s.chiaveLivello] || T.LEVELS.ragazzi;
     const giusta = v.nota;
     const pls = T.placementsFor(giusta, L.maxPosition);
-    const dove = pls.length ? T.describePlacement(pls[0].pl, pls[0].delta) : 'non suonabile in questa posizione';
+    const dove = pls.length ? T.describePlacement(pls[0].pl, pls[0].delta) : F.nonSuonabile;
     const altrove = pls.slice(1, 3).map(function (r) { return T.describePlacement(r.pl, r.delta); });
 
     const voce = {
       numero: v.numero,
       tipo: v.tipo,
-      tipoNome: NOMI_TIPO[v.tipo] || v.tipo,
+      tipoNome: (NOMI_TIPO[T.getLingua()] || NOMI_TIPO.it)[v.tipo] || v.tipo,
       nota: giusta,
       nomeGiusto: T.solfege(giusta),
       nomeGiustoOttava: T.solfegeOttava(giusta),
@@ -563,9 +716,9 @@ window.Gioco = (function () {
       notaScelta: null,
       tuaRisposta: null,
       categoria: 'lontana',
-      titolo: CATEGORIE.lontana.titolo,
+      titolo: categoria('lontana').titolo,
       spiegazione: '',
-      rimedio: CATEGORIE.lontana.rimedio,
+      rimedio: categoria('lontana').rimedio,
       ascolta: [T.midi(giusta)],
       ascoltaNomi: [T.solfegeOttava(giusta)]
     };
@@ -575,12 +728,12 @@ window.Gioco = (function () {
       const scelto = v.slot;
       if (!scelto) {
         voce.categoria = 'dito';
-        voce.tuaRisposta = 'nessuna risposta';
-        voce.spiegazione = 'Non hai toccato nessun punto del manico.';
+        voce.tuaRisposta = F.nessunaRisposta;
+        voce.spiegazione = F.nonToccato;
       } else {
         const cordaScelta = T.stringOf(scelto.stringId);
         const cordaGiusta = pls.length ? T.stringOf(pls[0].pl.stringId) : null;
-        const ditoScelto = scelto.primary ? ditoCompatto(scelto.primary.pl, scelto.primary.delta) : 'punto imprecisato';
+        const ditoScelto = scelto.primary ? ditoCompatto(scelto.primary.pl, scelto.primary.delta) : F.puntoImprecisato;
         voce.tuaRisposta = T.solfege(T.fromMidi(scelto.midi, false)) + ' (' + ditoScelto + ')';
         voce.notaScelta = T.fromMidi(scelto.midi, false);
         voce.frequenzaScelta = Math.round(T.freqMidi(scelto.midi) * 10) / 10;
@@ -588,13 +741,11 @@ window.Gioco = (function () {
         voce.ascoltaNomi = [T.solfegeOttava(giusta), T.solfege(T.fromMidi(scelto.midi, false))];
         if (cordaGiusta && scelto.stringId !== cordaGiusta.id) {
           voce.categoria = 'corda';
-          voce.spiegazione = 'Hai toccato la corda ' + cordaScelta.solfege +
-            ', ma ' + T.solfegeOttava(giusta) + ' si suona sulla corda ' + cordaGiusta.solfege +
-            ' (' + dove + ').';
+          voce.spiegazione = F.corda(T.nomeCorda(cordaScelta), T.solfegeOttava(giusta),
+            T.nomeCorda(cordaGiusta), dove);
         } else {
           voce.categoria = 'dito';
-          voce.spiegazione = 'Corda giusta, punto sbagliato: ' + T.solfegeOttava(giusta) +
-            ' si suona con il ' + dove + ', mentre tu hai toccato il ' + ditoScelto + '.';
+          voce.spiegazione = F.dito(T.solfegeOttava(giusta), dove, ditoScelto);
         }
       }
       voce.titolo = categoria(voce.categoria).titolo;
@@ -605,8 +756,8 @@ window.Gioco = (function () {
     /* ---- errore di nome (letto o ascoltato) ---- */
     const scelta = v.risposta;
     if (!scelta) {
-      voce.tuaRisposta = 'nessuna risposta';
-      voce.spiegazione = 'Non hai scelto nessun nome.';
+      voce.tuaRisposta = F.nessunaRisposta;
+      voce.spiegazione = F.nonScelto;
       return voce;
     }
     voce.tuaRisposta = T.solfege(scelta);
@@ -620,34 +771,28 @@ window.Gioco = (function () {
     const stessaLettera = scelta.letter === giusta.letter;
     if (stessaLettera && scelta.alter === giusta.alter) {
       voce.categoria = 'ottava';
-      voce.spiegazione = 'Hai scelto ' + T.solfegeOttava(scelta) + ' invece di ' + T.solfegeOttava(giusta) +
-        ': stesso nome, ottava diversa. ' + T.solfegeOttava(giusta) + ' si suona con ' + dove + '.';
+      voce.spiegazione = F.ottava(T.solfegeOttava(scelta), T.solfegeOttava(giusta), dove);
     } else if (stessaLettera) {
       voce.categoria = 'alterazione';
       const manca = (giusta.alter !== 0 && scelta.alter === 0);
-      voce.spiegazione = 'Hai scelto ' + T.solfege(scelta) + ' invece di ' + T.solfege(giusta) + ': ' +
-        (manca ? 'mancava l\'alterazione (' + (giusta.alter > 0 ? '♯ diesis' : '♭ bemolle') + ').'
-          : 'l\'alterazione non ci voleva.') +
-        ' ' + T.solfegeOttava(giusta) + ' si suona con ' + dove + '.';
+      const alter = T.getLingua() === 'en'
+        ? (giusta.alter > 0 ? '♯ sharp' : '♭ flat')
+        : (giusta.alter > 0 ? '♯ diesis' : '♭ bemolle');
+      voce.spiegazione = F.alterazione(T.solfege(scelta), T.solfegeOttava(giusta),
+        manca ? F.alterazioneManca(alter) : F.alterazioneExtra(), dove);
     } else {
       const distanza = Math.abs(T.midi(giusta) - T.midi(scelta));
       const gradini = Math.abs(T.staffStep(giusta) - T.staffStep(scelta));
       if (gradini === 1) {
         voce.categoria = 'pentagramma';
-        voce.spiegazione = 'Hai letto ' + T.solfege(scelta) + ' invece di ' + T.solfege(giusta) +
-          ': sono su riga e spazio vicini. ' + T.solfegeOttava(giusta) + ' sta ' +
-          (T.staffStep(giusta) > T.staffStep(scelta) ? 'un gradino più in alto' : 'un gradino più in basso') +
-          ' e si suona con ' + dove + '.';
+        voce.spiegazione = F.pentagramma(T.solfege(scelta), T.solfegeOttava(giusta),
+          T.staffStep(giusta) > T.staffStep(scelta), dove);
       } else if (distanza <= 2) {
         voce.categoria = 'semitono';
-        voce.spiegazione = 'Hai scelto ' + T.solfege(scelta) + ' invece di ' + T.solfege(giusta) +
-          ': ' + (distanza === 1 ? 'un semitono' : 'due semitoni') + ' di differenza. ' +
-          T.solfegeOttava(giusta) + ' si suona con ' + dove + '.';
+        voce.spiegazione = F.semitono(T.solfege(scelta), T.solfegeOttava(giusta), distanza, dove);
       } else {
         voce.categoria = 'lontana';
-        voce.spiegazione = 'Hai scelto ' + T.solfege(scelta) + ' invece di ' + T.solfege(giusta) +
-          ' (' + distanza + ' semitoni di distanza). ' + T.solfegeOttava(giusta) +
-          ' si suona con ' + dove + '.';
+        voce.spiegazione = F.lontana(T.solfege(scelta), T.solfegeOttava(giusta), distanza, dove);
       }
     }
     voce.titolo = categoria(voce.categoria).titolo;
@@ -691,6 +836,7 @@ window.Gioco = (function () {
   return {
     MODI: MODI, ORDINE: ORDINE, TASTI: TASTI,
     Sessione: Sessione, medaglia: medaglia,
-    riepilogaErrori: riepilogaErrori, CATEGORIE: CATEGORIE
+    riepilogaErrori: riepilogaErrori, CATEGORIE: CATEGORIE,
+    nomeModo: nomeModo, descModo: descModo, aiutoModo: aiutoModo
   };
 })();

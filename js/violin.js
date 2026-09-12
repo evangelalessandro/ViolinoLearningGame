@@ -110,9 +110,10 @@ window.Violin = (function () {
   function etichette() {
     let out = '';
     ORDER.forEach(function (id) {
-      const s = T.stringOf(id);
-      out += '<text class="v-string-label" x="' + XS[id] + '" y="' + (H - 44) + '">' + s.solfege + '</text>';
-      out += '<text class="v-string-roman" x="' + XS[id] + '" y="' + (H - 26) + '">' + s.roman + ' corda</text>';
+      out += '<text class="v-string-label" x="' + XS[id] + '" y="' + (H - 44) + '">' +
+        T.nomeCorda(id) + '</text>';
+      out += '<text class="v-string-roman" x="' + XS[id] + '" y="' + (H - 26) + '">' +
+        T.etichettaCorda(id) + '</text>';
     });
     return out;
   }
@@ -133,7 +134,7 @@ window.Violin = (function () {
       const cls = 'v-slot v-dito-' + variante + (hl ? ' is-right' : '') + (wr ? ' is-wrong' : '');
       out += '<g class="' + cls + '" data-string="' + sl.stringId + '" data-semis="' + sl.semis + '" ' +
         'data-midi="' + sl.midi + '" tabindex="' + (opt.interactive ? '0' : '-1') + '" role="button" ' +
-        'aria-label="' + nomeEsteso + ' sulla corda ' + T.stringOf(sl.stringId).solfege + ', ' + descr + '">';
+        'aria-label="' + nomeEsteso + ' — ' + descr + '">';
       out += '<title>' + nomeEsteso + ' — ' + descr + '.' + altre + '</title>';
       out += '<circle class="v-hit" cx="' + sl.x + '" cy="' + sl.y + '" r="' + (r + 1.5) + '"/>';
       out += '<circle class="v-dot" cx="' + sl.x + '" cy="' + sl.y + '" r="' + r + '" ' +

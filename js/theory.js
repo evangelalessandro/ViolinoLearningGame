@@ -18,6 +18,67 @@
   const FLAT = '\u266D';   // ♭
   const NATURAL = '\u266E'; // ♮
 
+  /* ------------------------------------------------------- lingua dei nomi */
+  /* In italiano le note si chiamano Do Re Mi Fa Sol La Si, in inglese C D E F
+     G A B: tutto il testo musicale del modulo passa da qui. */
+  let lingua = 'it';
+
+  const DITA = {
+    it: ['corda vuota', '1º dito', '2º dito', '3º dito', '4º dito'],
+    en: ['open string', '1st finger', '2nd finger', '3rd finger', '4th finger']
+  };
+  const VARIANTI = {
+    it: { '-1': 'basso', '0': 'naturale', '1': 'alto' },
+    en: { '-1': 'low', '0': 'normal', '1': 'high' }
+  };
+  const LIVELLI_EN = {
+    bambini: { name: 'Kids', desc: 'Open strings and the first notes in 1st position (G3–A4), naturals only.' },
+    ragazzi: { name: 'Teens', desc: 'The whole 1st position with natural notes (G3–E5).' },
+    adulti: { name: 'Adults', desc: 'Complete 1st position with sharps and flats, ledger lines.' },
+    maestri: { name: 'Masters', desc: '1st–3rd position, accidentals and the high register up to C6.' }
+  };
+
+  function setLingua(l) {
+    lingua = (l === 'en') ? 'en' : 'it';
+    return lingua;
+  }
+  function getLingua() { return lingua; }
+  function dita() { return DITA[lingua]; }
+  function varianti() { return VARIANTI[lingua]; }
+  /** "1ª" in italiano, "1st" in inglese. */
+  function ordinale(n) {
+    if (lingua !== 'en') return n + 'ª';
+    if (n === 1) return '1st';
+    if (n === 2) return '2nd';
+    if (n === 3) return '3rd';
+    return n + 'th';
+  }
+  function posizioneTesto(p) {
+    return lingua === 'en' ? ordinale(p) + ' position' : p + 'ª posizione';
+  }
+  /** Nome della corda: "Sol" oppure "G". */
+  function nomeCorda(id) {
+    const s = (typeof id === 'string') ? STRING_BY_ID[id] : id;
+    if (!s) return '';
+    return lingua === 'en' ? s.id : s.solfege;
+  }
+  /** Etichetta della corda col numero romano: "IV corda" / "IV string". */
+  function etichettaCorda(id) {
+    const s = (typeof id === 'string') ? STRING_BY_ID[id] : id;
+    if (!s) return '';
+    return s.roman + (lingua === 'en' ? ' string' : ' corda');
+  }
+  function nomeLivello(k) {
+    const L = LEVELS[k];
+    if (!L) return '';
+    return (lingua === 'en' && LIVELLI_EN[k]) ? LIVELLI_EN[k].name : L.name;
+  }
+  function descLivello(k) {
+    const L = LEVELS[k];
+    if (!L) return '';
+    return (lingua === 'en' && LIVELLI_EN[k]) ? LIVELLI_EN[k].desc : L.desc;
+  }
+
   // Indice diatonico (ottava * 7 + lettera) della nota E4 = 1ª riga del
   // pentagramma in chiave di violino. Tutto il disegno parte da qui.
   const E4_DIATONIC = 4 * 7 + 2;
@@ -58,23 +119,24 @@
   function midiKey(m) {
     return 'm' + m;
   }
-  /** Nome italiano: Do, Re, Mi♭, Fa♯ ... */
+  /** Nome della nota: "Do", "Fa♯" (italiano) oppure "C", "F#" (inglese). */
   function solfege(n, withAccidental) {
-    return SOLFEGE[n.letter] + (withAccidental === false ? '' : accidentalSymbol(n.alter));
+    const base = (lingua === 'en') ? n.letter : SOLFEGE[n.letter];
+    return base + (withAccidental === false ? '' : accidentalSymbol(n.alter));
   }
-  /** Nome italiano parlato, con l'alterazione a parole: "Fa diesis", "Si bemolle". */
+  /** Nome parlato, con l'alterazione a parole: "Fa diesis" / "F sharp". */
   function solfegeEsteso(n) {
-    const base = SOLFEGE[n.letter];
-    if (n.alter > 0) return base + ' diesis';
-    if (n.alter < 0) return base + ' bemolle';
+    const base = (lingua === 'en') ? n.letter : SOLFEGE[n.letter];
+    if (n.alter > 0) return base + (lingua === 'en' ? ' sharp' : ' diesis');
+    if (n.alter < 0) return base + (lingua === 'en' ? ' flat' : ' bemolle');
     return base;
   }
-  /** Nome italiano con l'ottava: "La4", "Fa♯4". */
+  /** Nome con l'ottava: "La4", "Fa♯4" / "A4", "F#4". */
   function solfegeOttava(n) {
     return solfege(n) + n.octave;
   }
   function solfegeLetter(n) {
-    return SOLFEGE[n.letter];
+    return (lingua === 'en') ? n.letter : SOLFEGE[n.letter];
   }
   /** Notazione anglosassone: C, D, Eb, F# ... */
   function english(n) {
@@ -105,7 +167,6 @@
 
   const FINGER_LABEL = ['corda vuota', '1º dito', '2º dito', '3º dito', '4º dito'];
   const DELTA_LABEL = { '-1': 'basso', '0': 'naturale', '1': 'alto' };
-
   function stringOf(id) {
     return STRING_BY_ID[id];
   }
@@ -181,12 +242,21 @@
     return placementsForMidi(midi(n), maxPosition);
   }
 
+  /** Descrizione di un punto del manico: "2º dito (alto) sulla corda Re" /
+      "2nd finger (high) on the D string". */
   function describePlacement(pl, delta) {
-    if (pl.open) return 'corda ' + stringOf(pl.stringId).solfege + ' a vuoto';
-    const d = DELTA_LABEL[String(delta || 0)];
-    return FINGER_LABEL[pl.finger] + (d && d !== 'naturale' ? ' (' + d + ')' : '') +
-      ' sulla corda ' + stringOf(pl.stringId).solfege +
-      (pl.position > 1 ? ' — ' + pl.position + 'ª posizione' : '');
+    const corda = nomeCorda(pl.stringId);
+    const d = delta || 0;
+    const v = varianti()[String(d)];
+    const pos = pl.position > 1 ? ' — ' + posizioneTesto(pl.position) : '';
+    if (pl.open) {
+      return lingua === 'en' ? 'open ' + corda + ' string' : 'corda ' + corda + ' a vuoto';
+    }
+    const dito = dita()[pl.finger];
+    const variante = (d !== 0 && v) ? ' (' + v + ')' : '';
+    return lingua === 'en'
+      ? dito + variante + ' on the ' + corda + ' string' + pos
+      : dito + variante + ' sulla corda ' + corda + pos;
   }
 
   /* --------------------------------------------------------------- livelli */
@@ -256,9 +326,9 @@
     return Array.from(map.values()).sort(function (a, b) { return midi(a.note) - midi(b.note); });
   }
 
-  /** Nome del grado/posizione del dito per la tabella di riferimento. */
+  /** Nome del dito nella lingua attiva. */
   function fingerName(finger) {
-    return FINGER_LABEL[finger] || '';
+    return dita()[finger] || '';
   }
 
   function isPlayable(n, maxPosition) {
@@ -325,6 +395,9 @@
     freq: freq, freqMidi: freqMidi, accidentalSymbol: accidentalSymbol,
     key: key, midiKey: midiKey, solfege: solfege, solfegeLetter: solfegeLetter,
     solfegeEsteso: solfegeEsteso, solfegeOttava: solfegeOttava,
+    setLingua: setLingua, getLingua: getLingua, dita: dita, ordinale: ordinale,
+    posizioneTesto: posizioneTesto, nomeCorda: nomeCorda, etichettaCorda: etichettaCorda,
+    nomeLivello: nomeLivello, descLivello: descLivello,
     english: english, equals: equals, fromMidi: fromMidi,
     stringOf: stringOf, advance: advance,
     placements: placements, allPlacements: allPlacements,

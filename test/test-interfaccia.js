@@ -142,7 +142,9 @@ if (!CHROME) {
     await invia('Page.enable');
     await invia('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
     await invia('Page.addScriptToEvaluateOnNewDocument', {
-      source: 'window.__errori=[];window.addEventListener("error",function(e){window.__errori.push((e.error&&e.error.stack)||e.message);});'
+      source: 'window.__errori=[];window.addEventListener("error",function(e){window.__errori.push((e.error&&e.error.stack)||e.message);});' +
+        // la lingua dipende dal browser: per il test la fissiamo all'italiano
+        'try{localStorage.setItem("violino.lingua","it");}catch(e){}'
     });
 
     console.log('── Niente deve coprire l\'interfaccia ' + '─'.repeat(28));
@@ -263,6 +265,85 @@ if (!CHROME) {
     await clickVero('#rie-chiudi');
     await attesa(300);
     check('chiuso su telefono', await valuta('return getComputedStyle(document.getElementById("overlay")).display;'), 'none');
+
+    /* Il pulsante della lingua deve tradurre davvero tutta l'interfaccia. */
+    console.log('── Pulsante della lingua (italiano ⇄ inglese) ' + '─'.repeat(16));
+    await invia('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+    await invia('Page.navigate', { url: URL_APP });
+    await attesa(1100);
+    check('parte in italiano', await valuta('return I18n.getLingua();'), 'it');
+    check('pulsante mostra la lingua di arrivo', await valuta('return document.getElementById("btn-lingua").textContent.trim();'), '🌐 EN');
+    check('titolo in italiano', await valuta('return document.querySelector(".hero h1").textContent;'), 'Impara le note del violino giocando');
+    check('livelli in italiano', await valuta('return Array.from(document.querySelectorAll(".liv-nome")).map(function(e){return e.textContent;}).join(",");'), 'Bambini,Ragazzi,Adulti,Maestri');
+    await clickVero('#btn-lingua');
+    await attesa(500);
+    check('passa all\'inglese', await valuta('return I18n.getLingua();'), 'en');
+    check('titolo in inglese', await valuta('return document.querySelector(".hero h1").textContent;'), 'Learn the violin notes by playing');
+    check('livelli in inglese', await valuta('return Array.from(document.querySelectorAll(".liv-nome")).map(function(e){return e.textContent;}).join(",");'), 'Kids,Teens,Adults,Masters');
+    check('giochi in inglese', await valuta('return document.querySelector(".card-nome").textContent;'), 'Read the note');
+    check('pulsante mostra IT', await valuta('return document.getElementById("btn-lingua").textContent.trim();'), '🌐 IT');
+    check('lingua salvata', await valuta('return localStorage.getItem("violino.lingua");'), 'en');
+    check('lingua del documento', await valuta('return document.documentElement.lang + "/" + document.body.getAttribute("data-lingua");'), 'en/en');
+    check('aiuto in inglese', await valuta(
+      'document.getElementById("btn-help").click();' +
+      'var v=Array.from(document.querySelectorAll("#screen-help [data-lingua-solo=\'en\']")).filter(function(e){return e.getClientRects().length;});' +
+      'var i=Array.from(document.querySelectorAll("#screen-help [data-lingua-solo=\'it\']")).filter(function(e){return e.getClientRects().length;});' +
+      'return v.length>0 && i.length===0;'), true);
+    await valuta('document.getElementById("btn-help").click(); return true;');
+    await attesa(300);
+
+    console.log('── Note in inglese nel gioco ' + '─'.repeat(34));
+    await clickVero('[data-modo="leggi"]');
+    await attesa(700);
+    check('opzioni con lettere', await valuta(
+      'var n=Array.from(document.querySelectorAll("#screen-play .opt-nome")).map(function(e){return e.textContent;});' +
+      'return n.length===4 && n.every(function(x){return /^[A-G][♯♭]?$/.test(x);});'), true);
+    check('nessun nome italiano fra le opzioni', await valuta(
+      'var n=Array.from(document.querySelectorAll("#screen-play .opt-nome")).map(function(e){return e.textContent;});' +
+      'return n.filter(function(x){return /Do|Re|Mi|Fa|Sol|La|Si/.test(x);}).length;'), 0);
+    check('descrizione estesa in inglese', await valuta(
+      'var t=Array.from(document.querySelectorAll("#screen-play .opt")).map(function(e){return e.getAttribute("title");});' +
+      'return t.every(function(x){return /^[A-G]( sharp| flat)?$/.test(x);});'), true);
+    check('HUD in inglese', await valuta('return document.querySelector(".hud-k").textContent;'), 'Points');
+    check('nessun errore JavaScript', await valuta('return window.__errori || [];'), []);
+
+    console.log('── Manico e tabella in inglese ' + '─'.repeat(32));
+    await clickVero('#btn-esci');
+    await attesa(400);
+    await clickVero('#btn-nav-impara');
+    await attesa(600);
+    check('corde con lettere', await valuta(
+      'return Array.from(document.querySelectorAll("#learn-violin .v-string-label")).map(function(e){return e.textContent;}).join("");'), 'GDAE');
+    check('etichetta della corda in inglese', await valuta(
+      'return document.querySelector("#learn-violin .v-string-roman").textContent;'), 'IV string');
+    check('tabella con lettere', await valuta(
+      'var n=Array.from(document.querySelectorAll("#learn-table .chip-nome")).map(function(e){return e.textContent;});' +
+      'return n.length>10 && n.every(function(x){return /^[A-G][♯♭]?$/.test(x);});'), true);
+    check('suggerimento pallina in inglese', await valuta(
+      'var g=document.querySelector("#learn-violin .v-slot title"); return /open G string|on the [GDAE] string/.test(g.textContent);'), true);
+    check('descrizione della nota in inglese', await valuta(
+      'var d=document.querySelector("#learn-nota .nota-dove"); return /On the fingerboard/.test(d.textContent);'), true);
+    check('nessun errore JavaScript', await valuta('return window.__errori || [];'), []);
+
+    // si torna all'italiano restando sulla schermata attiva (Studia)
+    await clickVero('#btn-lingua');
+    await attesa(500);
+    check('torna all\'italiano', await valuta('return I18n.getLingua();'), 'it');
+    check('Studia di nuovo in italiano', await valuta(
+      'var d=document.querySelector("#learn-nota .nota-dove"); return /Sul manico/.test(d.textContent);'), true);
+    check('corde di nuovo in italiano', await valuta(
+      'return Array.from(document.querySelectorAll("#learn-violin .v-string-label")).map(function(e){return e.textContent;}).join("");'), 'SolReLaMi');
+    await clickVero('#btn-home');
+    await attesa(500);
+    check('home di nuovo in italiano', await valuta('return document.querySelector(".hero h1").textContent;'), 'Impara le note del violino giocando');
+    await clickVero('[data-modo="leggi"]');
+    await attesa(700);
+    check('HUD di nuovo in italiano', await valuta('return document.querySelector(".hud-k").textContent;'), 'Punti');
+    check('note di nuovo in italiano', await valuta(
+      'var n=Array.from(document.querySelectorAll("#screen-play .opt-nome")).map(function(e){return e.textContent;});' +
+      'return n.every(function(x){return /^(Do|Re|Mi|Fa|Sol|La|Si)[♯♭]?$/.test(x);});'), true);
+    await clickVero('#btn-esci');
+    await attesa(400);
 
     /* Nessuna scritta "undefined"/"NaN" dev'essere visibile: è il sintomo tipico
        di una proprietà scritta con un nome diverso da quello usato nell'interfaccia. */

@@ -5,6 +5,8 @@
   'use strict';
 
   const T = window.Theory;
+  const I18n = window.I18n;
+  const t = function (k, v) { return I18n.t(k, v); };
   const TASTI_LABEL = ['1', '2', '3', '4', '5', '6'];
   const TASTI_P1 = ['a', 's', 'd', 'f', 'g', 'h'];
   const TASTI_P2 = ['j', 'k', 'l', 'ò', 'à', 'ù'];
@@ -44,6 +46,12 @@
       const b = JSON.parse(localStorage.getItem('violino.best') || 'null');
       if (b) App.best = b;
     } catch (e) { /* storage non disponibile */ }
+    // i nomi dei giocatori predefiniti seguono la lingua, quelli scelti a mano no
+    const n = App.opt.nomi || [];
+    const predefiniti = ['Giocatore 1', 'Giocatore 2', 'Player 1', 'Player 2'];
+    if (!n[0] || predefiniti.indexOf(n[0]) >= 0) n[0] = t('nome.giocatore', { n: 1 });
+    if (!n[1] || predefiniti.indexOf(n[1]) >= 0) n[1] = t('nome.giocatore', { n: 2 });
+    App.opt.nomi = n;
     App.imparaLivello = App.opt.livello;
   }
   function salvaPreferenze() {
@@ -113,58 +121,58 @@
   function renderHome() {
     const L = livello();
     const livelli = T.LEVEL_ORDER.map(function (k) {
-      const lv = T.LEVELS[k];
       return '<button class="liv-btn' + (k === App.opt.livello ? ' is-on' : '') + '" data-liv="' + k + '">' +
-        '<span class="liv-icona">' + lv.icona + '</span>' +
-        '<span class="liv-nome">' + lv.name + '</span></button>';
+        '<span class="liv-icona">' + T.LEVELS[k].icona + '</span>' +
+        '<span class="liv-nome">' + T.nomeLivello(k) + '</span></button>';
     }).join('');
 
     const cards = Gioco.ORDINE.map(function (k) {
       const m = Gioco.MODI[k];
       const b = leggiBest(k, App.opt.livello);
-      const record = b ? '<span class="card-record">Record ' + b.punti + ' pt</span>' : '';
-      const badge = m.giocatori > 1 ? '<span class="card-badge">2 giocatori</span>' : '';
-      const durata = m.secondi ? m.secondi + '"' : (m.domande ? m.domande + ' domande' : '');
+      const record = b ? '<span class="card-record">' + t('home.record', { n: b.punti }) + '</span>' : '';
+      const badge = m.giocatori > 1 ? '<span class="card-badge">' + t('home.dueGiocatori') + '</span>' : '';
+      const durata = m.secondi ? m.secondi + '"' : (m.domande ? t('home.domande', { n: m.domande }) : '');
       return '<button class="card modo" data-modo="' + k + '">' +
         '<span class="card-top"><span class="card-icona">' + m.icona + '</span>' + badge + '</span>' +
-        '<span class="card-nome">' + m.nome + '</span>' +
-        '<span class="card-desc">' + m.desc + '</span>' +
+        '<span class="card-nome">' + Gioco.nomeModo(m) + '</span>' +
+        '<span class="card-desc">' + Gioco.descModo(m) + '</span>' +
         '<span class="card-foot"><span class="card-durata">' + durata + '</span>' + record + '</span>' +
         '</button>';
     }).join('');
 
     el('screen-home').innerHTML =
       '<div class="hero">' +
-      '<h1>Impara le note del violino giocando</h1>' +
-      '<p>Scegli un gioco, il livello giusto per te e comincia. Puoi giocare da solo, ' +
-      'sfidare un amico a turni oppure suonare insieme sullo stesso schermo.</p>' +
+      '<h1>' + t('home.titolo') + '</h1>' +
+      '<p>' + t('home.sottotitolo') + '</p>' +
       '<div class="hero-azioni">' +
-      '<button class="btn primario grande" id="btn-vai-gioca">🎮 Scegli un gioco</button>' +
-      '<button class="btn grande" id="btn-vai-impara">📚 Studia le note</button>' +
+      '<button class="btn primario grande" id="btn-vai-gioca">' + t('home.scegli') + '</button>' +
+      '<button class="btn grande" id="btn-vai-impara">' + t('home.studia') + '</button>' +
       '</div>' +
       '</div>' +
       '<div class="panel">' +
-      '<div class="panel-titolo">Livello <span class="pill">' + L.icona + ' ' + L.name + '</span></div>' +
+      '<div class="panel-titolo">' + t('home.livello') + ' <span class="pill">' + L.icona + ' ' +
+      T.nomeLivello(App.opt.livello) + '</span></div>' +
       '<div class="livelli">' + livelli + '</div>' +
-      '<p class="liv-desc">' + L.desc + '</p>' +
+      '<p class="liv-desc">' + T.descLivello(App.opt.livello) + '</p>' +
       '</div>' +
       '<div class="modi">' + cards + '</div>' +
       '<div class="panel opzioni-rapide">' +
-      '<div class="panel-titolo">Opzioni</div>' +
+      '<div class="panel-titolo">' + t('home.opzioni') + '</div>' +
       '<label class="switch"><input type="checkbox" id="opt-bemolli"' + (App.opt.preferFlats ? ' checked' : '') + '>' +
-      '<span>Usa i bemolli (Si♭) invece dei diesis (La♯)</span></label>' +
-      '<label class="switch"><span>Risposte fra cui scegliere</span>' +
+      '<span>' + t('home.bemolli') + '</span></label>' +
+      '<label class="switch"><span>' + t('home.risposte') + '</span>' +
       '<select id="opt-opzioni">' +
       [3, 4, 5, 6].map(function (n) {
         return '<option value="' + n + '"' + (n === App.opt.numOpzioni ? ' selected' : '') + '>' + n + '</option>';
       }).join('') +
       '</select></label>' +
       '<div class="nomi">' +
-      '<label>Nome giocatore 1 <input id="nome-1" type="text" maxlength="14" value="' + esc(App.opt.nomi[0]) + '"></label>' +
-      '<label>Nome giocatore 2 <input id="nome-2" type="text" maxlength="14" value="' + esc(App.opt.nomi[1]) + '"></label>' +
-      '<label>Durata sfide a due <select id="opt-durata">' +
+      '<label>' + t('home.nome1') + ' <input id="nome-1" type="text" maxlength="14" value="' + esc(App.opt.nomi[0]) + '"></label>' +
+      '<label>' + t('home.nome2') + ' <input id="nome-2" type="text" maxlength="14" value="' + esc(App.opt.nomi[1]) + '"></label>' +
+      '<label>' + t('home.durata') + ' <select id="opt-durata">' +
       [30, 45, 60, 90].map(function (s) {
-        return '<option value="' + s + '"' + (s === App.opt.secondiDue ? ' selected' : '') + '>' + s + ' secondi</option>';
+        return '<option value="' + s + '"' + (s === App.opt.secondiDue ? ' selected' : '') + '>' +
+          t('home.secondi', { n: s }) + '</option>';
       }).join('') + '</select></label>' +
       '</div></div>';
 
@@ -213,10 +221,9 @@
 
   function renderLevelPicker() {
     el('level-picker').innerHTML = T.LEVEL_ORDER.map(function (k) {
-      const lv = T.LEVELS[k];
       return '<button class="pill-btn' + (k === App.opt.livello ? ' is-on' : '') + '" data-liv="' + k + '" ' +
-        'title="' + esc(lv.desc) + '"><span class="pi-icona">' + lv.icona + '</span>' +
-        '<span class="pi-nome">' + lv.name + '</span></button>';
+        'title="' + esc(T.descLivello(k)) + '"><span class="pi-icona">' + T.LEVELS[k].icona + '</span>' +
+        '<span class="pi-nome">' + T.nomeLivello(k) + '</span></button>';
     }).join('');
     el('level-picker').querySelectorAll('[data-liv]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -241,28 +248,27 @@
 
     el('screen-learn').innerHTML =
       '<div class="panel">' +
-      '<div class="panel-titolo">Studia il manico e il pentagramma</div>' +
+      '<div class="panel-titolo">' + t('impara.titolo') + '</div>' +
       '<div class="learn-grid">' +
       '<div class="learn-violino"><div id="learn-violin"></div>' +
       '<div class="pos-scelta">' + posScelte.map(function (p) {
         return '<button class="pill-btn' + (p === selPos ? ' is-on' : '') + '" data-pos="' + p + '">' +
-          (p === 1 ? '1ª posizione' : 'fino alla ' + p + 'ª') + '</button>';
+          (p === 1 ? t('impara.pos1') : t('impara.finoA', { n: p })) + '</button>';
       }).join('') + '</div>' +
-      '<p class="mini">Tocca una pallina: il numero è il dito, il colore è la corda. ' +
-      'I nomi delle note sono quelli italiani (Do, Re, Mi, Fa, Sol, La, Si) e il numero ' +
-      'indica l\'ottava: il La4 è il La di riferimento a 440 Hz.</p>' +
+      '<p class="mini">' + t('impara.toccaPallina') + '</p>' +
       '</div>' +
       '<div class="learn-pent">' +
       '<div class="learn-staff" id="learn-staff"></div>' +
       '<div class="learn-nota" id="learn-nota"></div>' +
       '<div class="learn-azioni">' +
-      '<button class="btn" id="btn-ripeti">🔊 Riascolta</button>' +
-      '<button class="btn ghost" id="btn-accorda">🎻 Accordatura (Sol Re La Mi)</button>' +
+      '<button class="btn" id="btn-ripeti">' + t('impara.riascolta') + '</button>' +
+      '<button class="btn ghost" id="btn-accorda">' + t('impara.accordatura') + '</button>' +
       '</div>' +
       '</div>' +
       '</div></div>' +
-      '<div class="panel"><div class="panel-titolo">Le note della ' + (selPos === 1 ? '1ª' : selPos + 'ª') +
-      ' posizione</div><div id="learn-table"></div></div>';
+      '<div class="panel"><div class="panel-titolo">' +
+      t('impara.noteDella', { pos: selPos === 1 ? t('impara.pos1') : T.ordinale(selPos) }) +
+      '</div><div id="learn-table"></div></div>';
 
     const optViolino = {
       maxPosition: selPos,
@@ -302,16 +308,16 @@
     Staff.renderTo(el('learn-staff'), { notes: [n], labels: false });
     const pls = T.placementsFor(n, 3);
     const prim = pls[0];
-    const dove = prim ? T.describePlacement(prim.pl, prim.delta) : 'non suonabile in 1ª posizione';
-    const alterTxt = n.alter > 0 ? ' (' + T.solfegeLetter(n) + ' diesis)'
-      : n.alter < 0 ? ' (' + T.solfegeLetter(n) + ' bemolle)' : '';
+    const dove = prim ? T.describePlacement(prim.pl, prim.delta) : t('impara.nonSuonabile');
+    const alterTxt = n.alter ? ' (' + T.solfegeEsteso(n) + ')' : '';
     el('learn-nota').innerHTML =
       '<div class="nota-grande">' + T.solfege(n) + '</div>' +
       '<div class="nota-sub">' + T.solfegeOttava(n) + alterTxt + ' · ' +
-      (Math.round(T.freq(n) * 10) / 10).toLocaleString('it-IT') + ' Hz</div>' +
-      '<div class="nota-dove">' + (prim ? 'Sul manico: ' + dove : dove) + '</div>' +
-      (pls.length > 1 ? '<div class="nota-alt">Si può suonare anche: ' +
-        pls.slice(1, 3).map(function (r) { return T.describePlacement(r.pl, r.delta); }).join(', ') + '</div>' : '');
+      (Math.round(T.freq(n) * 10) / 10).toLocaleString(I18n.getLingua() === 'en' ? 'en-GB' : 'it-IT') + ' Hz</div>' +
+      '<div class="nota-dove">' + (prim ? t('impara.sulManico', { dove: dove }) : dove) + '</div>' +
+      (pls.length > 1 ? '<div class="nota-alt">' + t('impara.anche', {
+        dove: pls.slice(1, 3).map(function (r) { return T.describePlacement(r.pl, r.delta); }).join(', ')
+      }) + '</div>' : '');
   }
 
   function renderTabella(lv) {
@@ -327,10 +333,10 @@
         const dito = pl.pl.finger;
         return '<button class="chip" data-midi="' + T.midi(x.note) + '" style="--corda:' + s.color + '">' +
           '<span class="chip-nome">' + T.solfege(x.note) + '</span>' +
-          '<span class="chip-dito">' + (dito === 0 ? 'vuota' : dito + 'º') + '</span></button>';
+          '<span class="chip-dito">' + (dito === 0 ? t('impara.vuota') : T.ordinale(dito)) + '</span></button>';
       }).join('');
       return '<div class="tc-riga">' +
-        '<div class="tc-nome" style="--corda:' + s.color + '">' + s.solfege +
+        '<div class="tc-nome" style="--corda:' + s.color + '">' + T.nomeCorda(s.id) +
         ' <small>' + s.roman + '</small></div>' +
         '<div class="tc-note">' + chips + '</div></div>';
     }).join('');
@@ -359,27 +365,29 @@
     ov.className = 'overlay';
     ov.innerHTML =
       '<div class="modal">' +
-      '<h2>' + modo.icona + ' ' + modo.nome + '</h2>' +
-      '<p class="mini">' + modo.desc + '</p>' +
-      '<label>Nome giocatore 1<input id="s-nome-1" type="text" maxlength="14" value="' + esc(App.opt.nomi[0]) + '"></label>' +
-      '<label>Nome giocatore 2<input id="s-nome-2" type="text" maxlength="14" value="' + esc(App.opt.nomi[1]) + '"></label>' +
+      '<h2>' + modo.icona + ' ' + Gioco.nomeModo(modo) + '</h2>' +
+      '<p class="mini">' + Gioco.descModo(modo) + '</p>' +
+      '<label>' + t('home.nome1') + '<input id="s-nome-1" type="text" maxlength="14" value="' + esc(App.opt.nomi[0]) + '"></label>' +
+      '<label>' + t('home.nome2') + '<input id="s-nome-2" type="text" maxlength="14" value="' + esc(App.opt.nomi[1]) + '"></label>' +
       (modo.layout === 'turni'
-        ? '<label>Secondi per turno<select id="s-durata">' +
+        ? '<label>' + t('setup.secondiTurno') + '<select id="s-durata">' +
         [20, 30, 45, 60].map(function (s) {
-          return '<option value="' + s + '"' + (s === App.opt.secondiDue ? ' selected' : '') + '>' + s + ' secondi</option>';
+          return '<option value="' + s + '"' + (s === App.opt.secondiDue ? ' selected' : '') + '>' +
+            t('home.secondi', { n: s }) + '</option>';
         }).join('') + '</select></label>'
-        : '<label>Durata della sfida<select id="s-durata">' +
+        : '<label>' + t('setup.durataSfida') + '<select id="s-durata">' +
         [30, 45, 60, 90].map(function (s) {
-          return '<option value="' + s + '"' + (s === App.opt.secondiDue ? ' selected' : '') + '>' + s + ' secondi</option>';
+          return '<option value="' + s + '"' + (s === App.opt.secondiDue ? ' selected' : '') + '>' +
+            t('home.secondi', { n: s }) + '</option>';
         }).join('') + '</select></label>') +
       '<div class="modal-azioni">' +
-      '<button class="btn ghost" id="s-annulla">Annulla</button>' +
-      '<button class="btn primario" id="s-inizia">Inizia la sfida</button>' +
+      '<button class="btn ghost" id="s-annulla">' + t('setup.annulla') + '</button>' +
+      '<button class="btn primario" id="s-inizia">' + t('setup.inizia') + '</button>' +
       '</div></div>';
     el('s-annulla').addEventListener('click', function () { ov.hidden = true; ov.innerHTML = ''; });
     el('s-inizia').addEventListener('click', function () {
-      const n1 = el('s-nome-1').value.trim() || 'Giocatore 1';
-      const n2 = el('s-nome-2').value.trim() || 'Giocatore 2';
+      const n1 = el('s-nome-1').value.trim() || t('nome.giocatore', { n: 1 });
+      const n2 = el('s-nome-2').value.trim() || t('nome.giocatore', { n: 2 });
       const dur = parseInt(el('s-durata').value, 10);
       App.opt.nomi = [n1, n2];
       App.opt.secondiDue = dur;
@@ -442,12 +450,12 @@
       sc.innerHTML =
         '<div class="card turno">' +
         '<div class="turno-icona">🎻</div>' +
-        '<h2>Tocca a <em>' + esc(g.nome) + '</em></h2>' +
-        (prec ? '<p class="turno-prec">' + esc(prec.nome) + ' ha totalizzato <strong>' + prec.punti + ' punti</strong> (' +
-          prec.giusti + ' giuste, ' + prec.sbagli + ' sbagliate).</p>' : '<p class="mini">' + s.secondi +
-          ' secondi per rispondere al maggior numero di note.</p>') +
-        '<button class="btn primario grande" id="btn-turno">Inizia il turno</button>' +
-        '<button class="btn ghost" id="btn-esci-2">Esci</button>' +
+        '<h2>' + t('gioco.toccaA', { nome: esc(g.nome) }) + '</h2>' +
+        (prec ? '<p class="turno-prec">' + t('gioco.turnoPrec', {
+          nome: esc(prec.nome), punti: prec.punti, giuste: prec.giusti, sbagli: prec.sbagli
+        }) + '</p>' : '<p class="mini">' + t('gioco.turnoTempo', { n: s.secondi }) + '</p>') +
+        '<button class="btn primario grande" id="btn-turno">' + t('gioco.iniziaTurno') + '</button>' +
+        '<button class="btn ghost" id="btn-esci-2">' + t('gioco.esci') + '</button>' +
         '</div>';
       el('btn-turno').addEventListener('click', function () { s.avviaTurno(s.turno); });
       el('btn-esci-2').addEventListener('click', function () { esci(); });
@@ -468,12 +476,12 @@
       : prog;
     const critico = s.secondi && s.tempo <= 10;
     return '<div class="hud">' +
-      '<div class="hud-item"><span class="hud-k">Punti</span><span class="hud-v">' + g.punti + '</span></div>' +
-      '<div class="hud-item"><span class="hud-k">Serie</span><span class="hud-v">' + (g.serie >= 2 ? '🔥 ' + g.serie : g.serie) + '</span></div>' +
-      '<div class="hud-item"><span class="hud-k">Giuste</span><span class="hud-v"><b class="ok">' + g.giusti + '</b>/<b class="ko">' + g.sbagli + '</b></span></div>' +
+      '<div class="hud-item"><span class="hud-k">' + t('gioco.punti') + '</span><span class="hud-v">' + g.punti + '</span></div>' +
+      '<div class="hud-item"><span class="hud-k">' + t('gioco.serie') + '</span><span class="hud-v">' + (g.serie >= 2 ? '🔥 ' + g.serie : g.serie) + '</span></div>' +
+      '<div class="hud-item"><span class="hud-k">' + t('gioco.giuste') + '</span><span class="hud-v"><b class="ok">' + g.giusti + '</b>/<b class="ko">' + g.sbagli + '</b></span></div>' +
       (s.secondi
-        ? '<div class="hud-item"><span class="hud-k">Tempo</span><span class="hud-v' + (critico ? ' critico' : '') + '" data-tempo>' + tempo + '"</span></div>'
-        : '<div class="hud-item"><span class="hud-k">Domanda</span><span class="hud-v">' + Math.min(s.indice + 1, s.totale) + '/' + s.totale + '</span></div>') +
+        ? '<div class="hud-item"><span class="hud-k">' + t('gioco.tempo') + '</span><span class="hud-v' + (critico ? ' critico' : '') + '" data-tempo>' + tempo + '"</span></div>'
+        : '<div class="hud-item"><span class="hud-k">' + t('gioco.domanda') + '</span><span class="hud-v">' + Math.min(s.indice + 1, s.totale) + '/' + s.totale + '</span></div>') +
       '</div>' +
       '<div class="barra' + (critico ? ' critico' : '') + '"><i data-barra style="width:' + Math.round(barra * 100) + '%"></i></div>';
   }
@@ -499,10 +507,10 @@
     if (!u) return '';
     const giusto = u.corretto;
     const testo = giusto
-      ? '<strong>Giusto!</strong> ' + T.solfege(u.domanda.nota) + ' +' + u.punti.totale + ' punti' +
-      (u.punti.serie ? ' <span class="tag">serie +' + u.punti.serie + '</span>' : '') +
-      (u.punti.veloce ? ' <span class="tag">velocità +' + u.punti.veloce + '</span>' : '')
-      : '<strong>Sbagliato.</strong> Era ' + (Array.isArray(u.giusto) ? u.giusto[0] : u.giusto);
+      ? t('gioco.giusto', { nota: T.solfege(u.domanda.nota), punti: u.punti.totale }) +
+      (u.punti.serie ? ' <span class="tag">' + t('gioco.bonusSerie', { n: u.punti.serie }) + '</span>' : '') +
+      (u.punti.veloce ? ' <span class="tag">' + t('gioco.bonusVelocita', { n: u.punti.veloce }) + '</span>' : '')
+      : t('gioco.sbagliato', { nota: Array.isArray(u.giusto) ? u.giusto[0] : u.giusto });
     return '<div class="feedback ' + (giusto ? 'ok' : 'ko') + '">' + testo + '</div>';
   }
 
@@ -519,20 +527,20 @@
       // il pentagramma rende la richiesta inequivocabile: "Sol3" e "Sol4" hanno
       // lo stesso nome ma stanno in due punti diversi del manico
       palco = '<div class="card richiesta pos">' +
-        '<div class="etichetta">Trova sul manico questa nota</div>' +
+        '<div class="etichetta">' + t('gioco.trovaSulManico') + '</div>' +
         '<div class="req-corpo">' +
         '<div class="req-staff">' + Staff.build({ notes: [q.nota] }) + '</div>' +
         '<div class="req-nome">' +
         '<div class="nota-grande">' + T.solfegeOttava(q.nota) + '</div>' +
         '<div class="nota-sub">' + T.solfegeEsteso(q.nota) + ' · ' +
-        (lv.maxPosition > 1 ? '1ª–' + lv.maxPosition + 'ª posizione' : '1ª posizione') + '</div>' +
+        (lv.maxPosition > 1 ? t('gioco.posizioni', { n: lv.maxPosition }) : t('gioco.posizione1')) + '</div>' +
         '</div></div></div>' +
         '<div class="violino-box" id="violino"></div>';
     } else if (q.tipo === 'orecchio') {
       const rivela = s.fase === 'feedback';
       palco = '<div class="card ascolto">' +
-        '<div class="etichetta">Ascolta e riconosci la nota</div>' +
-        '<button class="btn grande" id="btn-ascolta">🔊 Ascolta</button>' +
+        '<div class="etichetta">' + t('gioco.ascoltaE') + '</div>' +
+        '<button class="btn grande" id="btn-ascolta">' + t('gioco.ascolta') + '</button>' +
         (rivela ? '<div class="staff-wrap piccolo">' + Staff.build({ notes: [q.nota] }) + '</div>' : '') +
         '</div>';
     } else {
@@ -544,9 +552,9 @@
       '<div class="palco">' + palco + '</div>' +
       (q.tipo === 'posizione' ? '' : opzioniHTML(q, scelta)) +
       feedbackHTML(s) +
-      '<div class="piede"><button class="btn ghost" id="btn-esci">Esci</button>' +
+      '<div class="piede"><button class="btn ghost" id="btn-esci">' + t('gioco.esci') + '</button>' +
       pulsanteErrori(s) +
-      '<span class="mini">' + esc(s.modo.aiuto) + '</span></div>';
+      '<span class="mini">' + esc(Gioco.aiutoModo(s.modo)) + '</span></div>';
 
     if (q.tipo === 'posizione') {
       const hl = s.fase === 'feedback' ? q.soluzioni[0] : null;
@@ -603,7 +611,8 @@
   function pulsanteErrori(s) {
     const n = quantiErrori(s);
     return '<button class="btn errori-btn' + (n ? '' : ' pulito') + '" id="btn-errori">' +
-      '📋 ' + (n ? 'Errori <span class="contatore">' + n + '</span>' : 'Nessun errore 🎉') + '</button>';
+      '📋 ' + (n ? t('gioco.errori') + ' <span class="contatore">' + n + '</span>' : t('gioco.nessunErrore')) +
+      '</button>';
   }
 
   function apriRiepilogo(contesto) {
@@ -613,57 +622,61 @@
     if (!rip) return;
     App.riepilogoAperto = true;
     if (s.fase !== 'fine') s.pausa();
+    const locale = I18n.getLingua() === 'en' ? 'en-GB' : 'it-IT';
 
     const testata = '<div class="rie-testata">' +
-      '<h2>📋 Riepilogo degli errori</h2>' +
-      '<p class="mini">' + esc(rip.modo.nome) + ' · ' + T.LEVELS[rip.livello].name + ' · ' +
-      rip.sbagliate + (rip.sbagliate === 1 ? ' errore' : ' errori') + ' su ' + rip.totale +
-      ' domande · precisione ' + rip.precisione + '%</p>' +
+      '<h2>' + t('gioco.erroriTitolo') + '</h2>' +
+      '<p class="mini">' + t('gioco.erroriSommario', {
+        modo: esc(Gioco.nomeModo(rip.modo)), livello: T.nomeLivello(rip.livello),
+        sbagliate: rip.sbagliate === 1 ? t('gioco.erroreUno') : t('gioco.erroriMolti', { n: rip.sbagliate }),
+        totale: rip.totale, precisione: rip.precisione
+      }) + '</p>' +
       (rip.piuFrequente
-        ? '<div class="rie-frequente">Errore più frequente: <b>' + rip.piuFrequente.titolo +
-        '</b> (' + rip.piuFrequente.conteggio + ' volte)<br><span class="mini">' +
-        esc(rip.piuFrequente.rimedio) + '</span></div>'
+        ? '<div class="rie-frequente">' + t('gioco.piuFrequente', {
+          titolo: rip.piuFrequente.titolo, n: rip.piuFrequente.conteggio
+        }) + '<br><span class="mini">' + esc(rip.piuFrequente.rimedio) + '</span></div>'
         : '') +
       '</div>';
 
     const voci = rip.voci.length ? rip.voci.map(function (v) {
       const freq = (v.frequenzaScelta != null && v.notaScelta)
         ? '<div class="rie-freq">' + T.solfegeOttava(v.nota) + ' = ' +
-        v.frequenzaGiusta.toLocaleString('it-IT') + ' Hz · ' +
+        v.frequenzaGiusta.toLocaleString(locale) + ' Hz · ' +
         T.solfegeOttava(v.notaScelta) + ' = ' +
-        v.frequenzaScelta.toLocaleString('it-IT') + ' Hz</div>'
+        v.frequenzaScelta.toLocaleString(locale) + ' Hz</div>'
         : '';
       return '<div class="rie-voce">' +
-        '<div class="rie-testa"><span class="rie-num">Domanda ' + v.numero + '</span>' +
+        '<div class="rie-testa"><span class="rie-num">' + t('gioco.domanda') + ' ' + v.numero + '</span>' +
         '<span class="rie-tipo">' + esc(v.tipoNome) + '</span>' +
         '<span class="rie-cat">' + esc(v.titolo) + '</span></div>' +
         '<div class="rie-corpo">' +
         '<div class="rie-staff">' + Staff.build({ notes: [v.nota] }) + '</div>' +
         '<div class="rie-testi">' +
-        '<div class="rie-riga"><span class="rie-k">La tua risposta</span><b class="ko">' +
+        '<div class="rie-riga"><span class="rie-k">' + t('gioco.tuaRisposta') + '</span><b class="ko">' +
         esc(v.tuaRisposta) + '</b></div>' +
-        '<div class="rie-riga"><span class="rie-k">Risposta giusta</span><b class="ok">' +
+        '<div class="rie-riga"><span class="rie-k">' + t('gioco.rispostaGiusta') + '</span><b class="ok">' +
         v.nomeGiustoOttava + '</b>' +
         (v.nota.alter ? ' <em>(' + v.nomeGiustoEsteso + ')</em>' : '') + '</div>' +
         '<p class="rie-spiega">' + esc(v.spiegazione) + '</p>' +
-        '<p class="rie-dove">Sul manico: ' + esc(v.dove) +
-        (v.altrove.length ? ' <span class="mini">· si può suonare anche: ' + esc(v.altrove.join(', ')) + '</span>' : '') +
+        '<p class="rie-dove">' + t('gioco.sulManico', { dove: esc(v.dove) }) +
+        (v.altrove.length ? ' <span class="mini">· ' + t('gioco.ancheSu', { dove: esc(v.altrove.join(', ')) }) + '</span>' : '') +
         '</p>' + freq +
         '</div></div>' +
         '<div class="rie-azioni">' +
-        '<button class="btn piccolo" data-ascolta="' + v.ascolta.join(',') + '">🔊 Confronta: ' +
-        esc(v.ascoltaNomi.join(' poi ')) + '</button>' +
-        '<button class="btn piccolo ghost" data-ascolta="' + T.midi(v.nota) + '">🔊 Solo la nota giusta</button>' +
+        '<button class="btn piccolo" data-ascolta="' + v.ascolta.join(',') + '">' +
+        t('gioco.confronta', { nomi: esc(v.ascoltaNomi.join(' → ')) }) + '</button>' +
+        '<button class="btn piccolo ghost" data-ascolta="' + T.midi(v.nota) + '">' +
+        t('gioco.soloGiusta') + '</button>' +
         '</div></div>';
-    }).join('') : '<p class="rie-vuoto">🎉 Nessun errore da rivedere: complimenti!</p>';
+    }).join('') : '<p class="rie-vuoto">' + t('gioco.nessunErroreRivedere') + '</p>';
 
     const ov = el('overlay');
     ov.hidden = false;
     ov.className = 'overlay lungo';
-    ov.innerHTML = '<div class="modal riepilogo" role="dialog" aria-label="Riepilogo degli errori">' +
+    ov.innerHTML = '<div class="modal riepilogo" role="dialog" aria-label="' + t('gioco.erroriTitolo') + '">' +
       testata + '<div class="rie-lista">' + voci + '</div>' +
       '<div class="rie-piede"><button class="btn primario" id="rie-chiudi">' +
-      (s.fase === 'fine' ? 'Chiudi' : 'Chiudi e riprendi') + '</button></div></div>';
+      (s.fase === 'fine' ? t('gioco.chiudi') : t('gioco.chiudiRiprendi')) + '</button></div></div>';
 
     ov.querySelectorAll('[data-ascolta]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -739,17 +752,19 @@
 
     el('screen-play').innerHTML =
       '<div class="hud sfida">' +
-      '<div class="hud-item"><span class="hud-k">Tempo</span><span class="hud-v' +
+      '<div class="hud-item"><span class="hud-k">' + t('gioco.tempo') + '</span><span class="hud-v' +
       (s.tempo <= 10 ? ' critico' : '') + '" data-tempo>' + Math.max(0, Math.ceil(s.tempo)) + '"</span></div>' +
-      '<div class="hud-item"><span class="hud-k">Giocatore 1</span><span class="hud-v">' + s.giocatori[0].giusti + ' giuste</span></div>' +
-      '<div class="hud-item"><span class="hud-k">Giocatore 2</span><span class="hud-v">' + s.giocatori[1].giusti + ' giuste</span></div>' +
+      '<div class="hud-item"><span class="hud-k">' + esc(s.giocatori[0].nome) + '</span><span class="hud-v">' +
+      t('gioco.giuste2', { n: s.giocatori[0].giusti }) + '</span></div>' +
+      '<div class="hud-item"><span class="hud-k">' + esc(s.giocatori[1].nome) + '</span><span class="hud-v">' +
+      t('gioco.giuste2', { n: s.giocatori[1].giusti }) + '</span></div>' +
       '</div>' +
       '<div class="barra' + (s.tempo <= 10 ? ' critico' : '') + '"><i data-barra style="width:' +
       Math.round(s.tempo / s.secondi * 100) + '%"></i></div>' +
       '<div class="split">' + colonne + '</div>' +
-      '<div class="piede"><button class="btn ghost" id="btn-esci">Esci</button>' +
+      '<div class="piede"><button class="btn ghost" id="btn-esci">' + t('gioco.esci') + '</button>' +
       pulsanteErrori(s) +
-      '<span class="mini">' + esc(s.modo.aiuto) + '</span></div>';
+      '<span class="mini">' + esc(Gioco.aiutoModo(s.modo)) + '</span></div>';
 
     el('screen-play').querySelectorAll('.opt').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -806,20 +821,20 @@
 
     el('screen-play').innerHTML =
       '<div class="hud sfida">' +
-      '<div class="hud-item"><span class="hud-k">Tempo</span><span class="hud-v' +
+      '<div class="hud-item"><span class="hud-k">' + t('gioco.tempo') + '</span><span class="hud-v' +
       (s.tempo <= 10 ? ' critico' : '') + '" data-tempo>' + Math.max(0, Math.ceil(s.tempo)) + '"</span></div>' +
-      '<div class="hud-item"><span class="hud-k">Punti</span><span class="hud-v">' +
+      '<div class="hud-item"><span class="hud-k">' + t('gioco.punti') + '</span><span class="hud-v">' +
       s.giocatori[0].punti + ' – ' + s.giocatori[1].punti + '</span></div>' +
-      '<div class="hud-item"><span class="hud-k">Round</span><span class="hud-v">' + (s.indice + 1) + '</span></div>' +
+      '<div class="hud-item"><span class="hud-k">' + t('gioco.round') + '</span><span class="hud-v">' + (s.indice + 1) + '</span></div>' +
       '</div>' +
       '<div class="barra' + (s.tempo <= 10 ? ' critico' : '') + '"><i data-barra style="width:' +
       Math.round(s.tempo / s.secondi * 100) + '%"></i></div>' +
       '<div class="staff-wrap centro">' + Staff.build({ notes: [q.nota] }) + '</div>' +
-      '<div class="vs">chi tocca per primo la risposta giusta?</div>' +
+      '<div class="vs">' + t('gioco.chiPrimo') + '</div>' +
       '<div class="race-grid">' + pads + '</div>' +
-      '<div class="piede"><button class="btn ghost" id="btn-esci">Esci</button>' +
+      '<div class="piede"><button class="btn ghost" id="btn-esci">' + t('gioco.esci') + '</button>' +
       pulsanteErrori(s) +
-      '<span class="mini">' + esc(s.modo.aiuto) + '</span></div>';
+      '<span class="mini">' + esc(Gioco.aiutoModo(s.modo)) + '</span></div>';
 
     el('screen-play').querySelectorAll('.opt').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -851,8 +866,8 @@
     if (ris.giocatori.length > 1) {
       const a = ris.giocatori[0], b = ris.giocatori[1];
       const testa = ris.pareggio
-        ? '<h1 class="esito">🤝 Pareggio!</h1>'
-        : '<h1 class="esito">🏆 Vince ' + esc(ris.giocatori[ris.vincitore].nome) + '!</h1>';
+        ? '<h1 class="esito">' + t('esiti.pareggio') + '</h1>'
+        : '<h1 class="esito">' + t('esiti.vince', { nome: esc(ris.giocatori[ris.vincitore].nome) }) + '</h1>';
       sc.innerHTML =
         '<div class="card risultato">' +
         testa +
@@ -860,10 +875,10 @@
         rigaPunteggio(a, ris.vincitore === 0) + rigaPunteggio(b, ris.vincitore === 1) +
         '</div>' +
         '<div class="azioni">' +
-        '<button class="btn primario" id="r-rivincita">🔁 Rivincita</button>' +
-        ((a.sbagli + b.sbagli) ? '<button class="btn" id="r-errori">📋 Rivedi gli errori <span class="contatore">' +
-          (a.sbagli + b.sbagli) + '</span></button>' : '') +
-        '<button class="btn" id="r-home">🏠 Home</button>' +
+        '<button class="btn primario" id="r-rivincita">' + t('esiti.rivincita') + '</button>' +
+        ((a.sbagli + b.sbagli) ? '<button class="btn" id="r-errori">' + t('esiti.rivediErrori') +
+          ' <span class="contatore">' + (a.sbagli + b.sbagli) + '</span></button>' : '') +
+        '<button class="btn" id="r-home">' + t('esiti.home') + '</button>' +
         '</div></div>';
       el('r-rivincita').addEventListener('click', function () {
         partePartita(ris.modo.chiave, { nomi: App.opt.nomi, secondi: App.opt.secondiDue });
@@ -878,20 +893,21 @@
         '<div class="card risultato">' +
         '<div class="medaglia">' + med.icona + '</div>' +
         '<h1 class="esito">' + med.nome + '</h1>' +
-        '<p class="mini">' + ris.modo.icona + ' ' + ris.modo.nome + ' · ' + T.LEVELS[ris.livello].name + '</p>' +
-        '<div class="punteggio-grande">' + g.punti + '<small>punti</small></div>' +
-        (nuovo ? '<div class="record-nuovo">🎉 Nuovo record personale!</div>' :
-          (record ? '<div class="mini">Record da battere: ' + record.punti + ' punti</div>' : '')) +
+        '<p class="mini">' + ris.modo.icona + ' ' + Gioco.nomeModo(ris.modo) + ' · ' +
+        T.nomeLivello(ris.livello) + '</p>' +
+        '<div class="punteggio-grande">' + g.punti + '<small>' + t('esiti.punti') + '</small></div>' +
+        (nuovo ? '<div class="record-nuovo">' + t('esiti.nuovoRecord') + '</div>' :
+          (record ? '<div class="mini">' + t('esiti.recordDaBattere', { n: record.punti }) + '</div>' : '')) +
         '<div class="stat-grid">' +
-        stat('Giuste', g.giusti) + stat('Sbagliate', g.sbagli) +
-        stat('Precisione', g.precisione + '%') + stat('Serie migliore', g.serieMax) +
+        stat(t('esiti.statGiuste'), g.giusti) + stat(t('esiti.statSbagliate'), g.sbagli) +
+        stat(t('esiti.statPrecisione'), g.precisione + '%') + stat(t('esiti.statSerie'), g.serieMax) +
         '</div>' +
         '<div class="azioni">' +
-        '<button class="btn primario" id="r-rigioca">🔁 Gioca ancora</button>' +
-        (g.sbagli ? '<button class="btn" id="r-errori">📋 Rivedi gli errori <span class="contatore">' +
-          g.sbagli + '</span></button>' : '') +
-        '<button class="btn" id="r-livello">🎚️ Cambia livello</button>' +
-        '<button class="btn ghost" id="r-home">🏠 Home</button>' +
+        '<button class="btn primario" id="r-rigioca">' + t('esiti.rigioca') + '</button>' +
+        (g.sbagli ? '<button class="btn" id="r-errori">' + t('esiti.rivediErrori') +
+          ' <span class="contatore">' + g.sbagli + '</span></button>' : '') +
+        '<button class="btn" id="r-livello">' + t('esiti.cambiaLivello') + '</button>' +
+        '<button class="btn ghost" id="r-home">' + t('esiti.home') + '</button>' +
         '</div></div>';
       el('r-rigioca').addEventListener('click', function () {
         partePartita(ris.modo.chiave, {});
@@ -908,8 +924,9 @@
     return '<div class="riga-punt' + (vincitore ? ' vincitore' : '') + '">' +
       '<span class="rp-nome">' + (vincitore ? '👑 ' : '') + esc(g.nome) + '</span>' +
       '<span class="rp-punti">' + g.punti + '</span>' +
-      '<span class="rp-stat">' + g.giusti + ' giuste · ' + g.sbagli + ' sbagliate · ' +
-      g.precisione + '% · serie ' + g.serieMax + '</span></div>';
+      '<span class="rp-stat">' + t('esiti.riga', {
+        giuste: g.giusti, sbagliate: g.sbagli, precisione: g.precisione, serie: g.serieMax
+      }) + '</span></div>';
   }
   function stat(k, v) {
     return '<div class="stat"><span class="stat-v">' + v + '</span><span class="stat-k">' + k + '</span></div>';
@@ -962,13 +979,53 @@
   }
 
   /* ================================================================ AVVIO === */
+  function applicaLingua() {
+    document.body.setAttribute('data-lingua', I18n.getLingua());
+    const b = el('btn-lingua');
+    if (b) {
+      // il pulsante mostra la lingua verso cui si passa
+      b.textContent = '🌐 ' + (I18n.getLingua() === 'it' ? 'EN' : 'IT');
+      b.title = I18n.t('lingua.cambia');
+      b.setAttribute('aria-label', I18n.t('lingua.cambia'));
+    }
+    document.title = I18n.t('home.titolo') + ' · ImparaNote Violino';
+    const nav = el('btn-nav-impara');
+    if (nav) nav.innerHTML = '📚 <span class="pi-nome">' + I18n.t('nav.studia') + '</span>';
+    const su = el('btn-sound');
+    if (su) su.title = I18n.t('nav.audio');
+    const ai = el('btn-help');
+    if (ai) ai.title = I18n.t('nav.aiuto');
+  }
+
+  function cambiaLingua() {
+    I18n.setLingua(I18n.getLingua() === 'it' ? 'en' : 'it');
+  }
+
+  function ridisegna() {
+    applicaLingua();
+    renderLevelPicker();
+    if (App.sessione && App.schermata === 'play') renderPlay();
+    else if (App.schermata === 'learn') renderLearn();
+    else if (App.schermata === 'results' && App.sessione) mostraRisultati(App.sessione);
+    else renderHome();
+  }
+
   function init() {
+    // la lingua va decisa prima di tutto: nomi delle note e testi dipendono da lei
+    I18n.onCambia(function (l) {
+      T.setLingua(l);
+      ridisegna();
+    });
+    I18n.avvia();
+    T.setLingua(I18n.getLingua());
     caricaPreferenze();
     App.notaStudio = T.STRINGS[1].open;
+    applicaLingua();
     renderLevelPicker();
     renderHome();
     mostraSchermata('home');
 
+    el('btn-lingua').addEventListener('click', function () { cambiaLingua(); click(); });
     el('btn-home').addEventListener('click', function () { esci(); });
     el('btn-help').addEventListener('click', function () {
       if (App.sessione) App.sessione.fermaTimer();
@@ -986,7 +1043,10 @@
     });
     if (!App.opt.audio) { bs.textContent = '🔇'; Sound.setEnabled(false); }
     el('btn-nav-impara').addEventListener('click', function () { renderLearn(); mostraSchermata('learn'); });
-    el('help-chiudi').addEventListener('click', function () { mostraSchermata('home'); renderHome(); });
+    ['help-chiudi', 'help-chiudi-en'].forEach(function (id) {
+      const b = el(id);
+      if (b) b.addEventListener('click', function () { mostraSchermata('home'); renderHome(); });
+    });
     document.addEventListener('keydown', onKey);
     const sblocca = function () {
       if (typeof Sound !== 'undefined') Sound.init();
