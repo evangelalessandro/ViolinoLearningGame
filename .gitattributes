@@ -1,0 +1,4 @@
+# Mantiene i fine riga LF nel repository (progetto web)
+* text=auto eol=lf
+*.png binary
+*.jpg binary

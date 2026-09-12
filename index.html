@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ImparaNote Violino — impara le note giocando</title>
+<meta name="description" content="Giochi per imparare le note del violino: lettura sul pentagramma, posizioni sulle corde, sfide a tempo per uno o due giocatori.">
+<meta name="theme-color" content="#8b5a2b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='78' font-size='78'%3E%F0%9F%8E%BB%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <button class="brand" id="btn-home" title="Torna alla home">
+      <span class="brand-icona" aria-hidden="true">🎻</span>
+      <span class="brand-testo"><strong>ImparaNote</strong><small>Violino</small></span>
+    </button>
+    <div class="topbar-destra">
+      <button class="pill-btn nav-btn" id="btn-nav-impara">📚 <span class="pi-nome">Studia</span></button>
+      <div class="levels" id="level-picker" role="group" aria-label="Livello di difficoltà"></div>
+      <button class="icon-btn" id="btn-sound" aria-pressed="true" title="Attiva/disattiva l'audio">🔊</button>
+      <button class="icon-btn" id="btn-help" title="Come si gioca">?</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="screen" id="screen-home"></section>
+    <section class="screen" id="screen-learn"></section>
+    <section class="screen" id="screen-play"></section>
+    <section class="screen" id="screen-results"></section>
+
+    <section class="screen" id="screen-help">
+      <div class="panel">
+        <div class="panel-titolo">Come si legge la musica del violino</div>
+        <div class="help-grid">
+          <div>
+            <h3>Il pentagramma</h3>
+            <p>Il violino usa la <strong>chiave di violino</strong> (chiave di Sol). Le note si
+              scrivono su 5 righe e 4 spazi; quando servono note più acute o più gravi si
+              aggiungono i <strong>tagli addizionali</strong>, le lineette corte sopra o sotto il
+              pentagramma.</p>
+            <p>In chiave di violino la <strong>1ª riga in basso è il Mi4</strong>, il <strong>Do4</strong>
+              (Do centrale) sta sul primo taglio sotto il pentagramma.</p>
+          </div>
+          <div>
+            <h3>Le quattro corde</h3>
+            <ul class="help-liste">
+              <li><b>Sol3</b> — corda IV, la più grave</li>
+              <li><b>Re4</b> — corda III</li>
+              <li><b>La4</b> — corda II</li>
+              <li><b>Mi5</b> — corda I, la più acuta</li>
+            </ul>
+            <p>Dalla corda più grave alla più acuta si sale di <strong>cinque note</strong> (una
+              quinta): Sol → Re → La → Mi.</p>
+          </div>
+          <div>
+            <h3>Le dita</h3>
+            <p>Nelle figure del manico il numero dentro la pallina è il dito:
+              <b>0</b> = corda vuota, <b>1</b> = indice, <b>2</b> = medio, <b>3</b> = anulare,
+              <b>4</b> = mignolo.</p>
+            <p>La stessa nota si può spesso suonare su corde diverse: nella sezione
+              <em>Studia</em> vedi tutte le possibilità.</p>
+          </div>
+          <div>
+            <h3>Alterazioni</h3>
+            <p><b>♯ diesis</b> alza la nota di un semitono, <b>♭ bemolle</b> la abbassa di un
+              semitono. Sul violino si ottengono spostando il dito: per esempio il
+              <b>Fa♯</b> è il 2º dito "alto" sulla corda Re.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-titolo">I giochi</div>
+        <div class="help-grid">
+          <div><h3>🎼 Leggi la nota</h3><p>Compare una nota sul pentagramma: scegli il suo nome.
+            È l'allenamento base della lettura.</p></div>
+          <div><h3>🎻 Trova la posizione</h3><p>Leggi il nome e tocca il punto giusto sul manico,
+            sulla corda corretta.</p></div>
+          <div><h3>👂 Orecchio musicale</h3><p>Il violino suona una nota: riconoscila a orecchio.
+            Puoi riascoltare quante volte vuoi.</p></div>
+          <div><h3>⏱️ Sfida a tempo</h3><p>Sessanta secondi per leggere e ascoltare più note
+            possibili. Serie di risposte giuste = punti bonus.</p></div>
+          <div><h3>🔥 Tastiera a tempo</h3><p>Come sopra, ma le note vanno trovate sul manico.</p></div>
+          <div><h3>⚔️ Duello a turni</h3><p>Due giocatori, un turno a testa a tempo: vince chi
+            totalizza più punti.</p></div>
+          <div><h3>👥 Sfida contemporanea</h3><p>Due giocatori giocano nello stesso momento, ognuno
+            con le proprie note e i propri pulsanti.</p></div>
+          <div><h3>🏁 Testa a testa</h3><p>Stessa nota per tutti e due: chi risponde per primo
+            vince il punto, chi sbaglia resta bloccato.</p></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-titolo">Le sfide a due: comandi</div>
+        <p class="help-p">Nelle sfide a due potete rispondere <strong>toccando i pulsanti</strong>
+          sullo schermo (due persone sullo stesso tablet funziona benissimo) oppure con la
+          tastiera:</p>
+        <div class="help-tasti">
+          <div><span class="tasto">A</span><span class="tasto">S</span><span class="tasto">D</span><span class="tasto">F</span>
+            <em>Giocatore 1</em></div>
+          <div><span class="tasto">J</span><span class="tasto">K</span><span class="tasto">L</span><span class="tasto">Ò</span>
+            <em>Giocatore 2</em></div>
+        </div>
+        <div class="help-grid">
+          <div><h3>⚔️ A turni</h3><p>Il Giocatore 1 gioca il suo turno a tempo, poi passa il
+            dispositivo al Giocatore 2, che ha gli stessi secondi per battere il punteggio.</p></div>
+          <div><h3>👥 Contemporanea</h3><p>Schermo diviso in due: ognuno ha le sue note e va avanti
+            in autonomia. Allo scadere del tempo vince chi ha più punti.</p></div>
+          <div><h3>🏁 Testa a testa</h3><p>Una sola nota al centro: chi la riconosce per primo
+            prende i punti. Un errore blocca il pulsante fino alla nota successiva.</p></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-titolo">Consigli</div>
+        <ul class="help-liste">
+          <li>Attiva l'audio: sentire la nota mentre la leggi è metà dell'apprendimento.</li>
+          <li>Comincia dal livello <b>Bambini</b> anche se sei adulto: le corde vuote sono il
+            punto di partenza di ogni violinista.</li>
+          <li>Usa <b>Studia</b> per esplorare il manico prima di affrontare la sfida a tempo.</li>
+          <li>Il punteggio tiene conto della velocità: rispondere bene e in fretta vale più punti.</li>
+          <li>Il record personale di ogni gioco viene salvato automaticamente nel browser.</li>
+        </ul>
+        <div class="azioni"><button class="btn primario" id="help-chiudi">Ho capito, si gioca!</button></div>
+      </div>
+      <p class="mini centro">Fatto per chi studia il violino — bambini, ragazzi e adulti. Nessun dato
+        lascia il tuo dispositivo.</p>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<div id="overlay" class="overlay" hidden></div>
+
+<script src="js/theory.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/staff.js"></script>
+<script src="js/violin.js"></script>
+<script src="js/games.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+# 🎻 ImparaNote Violino
+
+Applicazione web per **imparare le note del violino giocando**: riconoscere le note sul
+pentagramma, trovarle sulle corde, allenare l'orecchio. Pensata per bambini, ragazzi e
+adulti, con sfide a tempo per un giocatore, **duelli a turni** e **sfide contemporanee**
+per due giocatori sullo stesso schermo.
+
+Non serve installare nulla, non serve internet: è tutto statico e i suoni del violino
+vengono sintetizzati in tempo reale dal browser (Web Audio API).
+
+---
+
+## Come si usa
+
+**Modo più semplice:** apri `index.html` con un doppio clic (funziona anche da `file://`).
+
+**Modo consigliato** (per tablet e per un comportamento identico a un sito pubblicato):
+
+```powershell
+# dalla cartella del progetto
+python -m http.server 8899
+# poi apri http://127.0.0.1:8899/
+```
+
+L'audio parte al primo tocco/click: è una regola dei browser, non un difetto.
+I record personali vengono salvati nel `localStorage` del browser: non esce nessun dato.
+
+---
+
+## I giochi
+
+| Gioco | Cosa si allena |
+|---|---|
+| 🎼 **Leggi la nota** | Compare una nota sul pentagramma: scegli il suo nome (10 domande) |
+| 🎻 **Trova la posizione** | Leggi il nome e tocca il punto giusto sul manico |
+| 👂 **Orecchio musicale** | Il violino suona una nota: riconoscila a orecchio (riascoltabile) |
+| ⏱️ **Sfida a tempo** | 60 secondi di domande miste fra lettura e ascolto |
+| 🔥 **Tastiera a tempo** | 60 secondi per trovare più note possibili sul manico |
+| ⚔️ **Duello a turni** | 2 giocatori, un turno a tempo ciascuno: vince chi fa più punti |
+| 👥 **Sfida contemporanea** | 2 giocatori **insieme**, schermo diviso, ognuno con le sue note |
+| 🏁 **Testa a testa** | Una nota per tutti: chi risponde per primo vince il punto |
+
+### 📋 Riepilogo degli errori
+
+In ogni gioco c'è il pulsante **📋 Errori** (con il numero di sbagli): apre un pannello che
+**mette in pausa** la partita e spiega ogni sbaglio, uno per uno. Lo stesso pannello si
+apre alla fine con **"Rivedi gli errori"**.
+
+Per ogni errore il pannello mostra:
+
+* il **pentagramma** con la nota giusta;
+* **la tua risposta** e **la risposta giusta**, con la nota scritta per esteso
+  ("Fa♯4 — Fa diesis");
+* **che tipo di sbaglio è stato**, riconosciuto automaticamente:
+  * *Stesso nome, ottava diversa* (Sol3 scambiato per Sol4)
+  * *Alterazione sbagliata* (Fa invece di Fa♯)
+  * *Riga o spazio sbagliato* (nota letta un gradino sopra o sotto)
+  * *Nota a un semitono di distanza*
+  * *Corda sbagliata* o *Dito sbagliato* (per i giochi sul manico)
+* **una spiegazione concreta** ("Hai toccato la corda Mi, ma La3 si suona sulla corda Sol
+  (1º dito)") e **dove si suona** quella nota, più le posizioni alternative;
+* il **confronto delle frequenze** (Fa = 349,2 Hz · Fa♯ = 370,0 Hz);
+* il pulsante **🔊 Confronta**, che suona prima la nota giusta e poi quella sbagliata, così
+  si sente la differenza.
+
+In testa al pannello: quante giuste, quante sbagliate, la precisione e — se un tipo di
+errore si ripete — **l'errore più frequente** con il consiglio per non ripeterlo.
+
+### Punteggio
+
+10 punti a risposta corretta, più un bonus **serie** (3 risposte di fila: +5, 5 di fila: +10)
+e un bonus **velocità** (fino a +8). Il record di ogni gioco e livello viene salvato.
+
+### I comandi delle sfide a due
+
+Si può giocare **toccando i pulsanti** sullo schermo (perfetto su un tablet fra due
+persone) oppure con la tastiera:
+
+| | Tasti |
+|---|---|
+| Giocatore 1 | `A` `S` `D` `F` |
+| Giocatore 2 | `J` `K` `L` `Ò` |
+
+Nel gioco singolo si risponde con `1` `2` `3` `4` (o toccando), `Spazio` riascolta la nota.
+
+---
+
+## Livelli
+
+| Livello | Contenuto |
+|---|---|
+| 🧒 **Bambini** | Corde vuote e prime note, 1ª posizione, solo note naturali (Sol3–La4) |
+| 🎵 **Ragazzi** | Tutta la 1ª posizione con note naturali (Sol3–Mi5) |
+| 🎼 **Adulti** | 1ª posizione completa, con diesis e bemolli, tagli addizionali |
+| 🏆 **Maestri** | 1ª–3ª posizione, alterazioni, registro acuto fino al Do6 |
+
+La voce **📚 Studia** mostra il manico interattivo (tocca una pallina: senti la nota e la
+vedi sul pentagramma), l'accordatura Sol–Re–La–Mi e la tabella delle note di ogni corda.
+
+---
+
+## Come funziona il modello musicale
+
+* **Nomi italiani** — le note si chiamano sempre **Do, Re, Mi, Fa, Sol, La, Si**, con
+  ♯/♭ accanto al nome (e la forma parlata *"Fa diesis"*, *"Si bemolle"* nei suggerimenti).
+  Il numero dopo il nome indica l'ottava: **La4** = 440 Hz, il La di riferimento.
+  Nessuna notazione anglosassone (A, B, C…) compare nell'interfaccia.
+* **Corda vuota e dita** — in 1ª posizione il *k*-esimo dito suona il grado diatonico
+  *k* sopra la corda vuota; ogni dito può poi suonare anche un semitono sotto (dito
+  "basso", es. Si♭) o sopra (dito "alto", es. Fa♯). Da qui nascono tutte le alterazioni
+  in modo coerente con la diteggiatura reale.
+  * Es. corda Re: 0 = Re4, 1º = Mi4, 2º = Fa4/Fa♯4, 3º = Sol4, 4º = La4.
+  * Sulla corda Mi il 1º dito è a un semitono (Fa5), non a due.
+* **Posizioni** — in posizione *P* il 1º dito suona il grado *P* sopra la corda vuota
+  (3ª posizione sulla corda Sol: 1º dito = Do4).
+* **La stessa nota su più corde** — Re4 è la corda Re vuota *oppure* il 4º dito sulla
+  corda Sol: l'app accetta entrambe e le spiega nel feedback.
+* **Nomi uguali in ottave diverse** — Sol3 e Sol4 si chiamano entrambi "Sol": per questo
+  le risposte a scelta hanno sempre nomi tutti diversi, e nel gioco *Trova la posizione*
+  la richiesta mostra anche il pentagramma e l'ottava, così il punto da toccare è
+  inequivocabile.
+* **Il pentagramma** — la chiave di violino è un disegno vettoriale allineato
+  geometricamente alla riga del Sol (nessuna dipendenza da font musicali installati);
+  ogni nota è posizionata contando righe e spazi a partire dal Mi4 (1ª riga), con i
+  tagli addizionali calcolati automaticamente.
+
+---
+
+## Struttura del progetto
+
+```
+index.html            struttura delle schermate e guida
+css/styles.css        stile (tema chiaro/scuro automatico, responsive)
+js/theory.js          note, frequenze, corde, diteggiature, posizioni, livelli
+js/audio.js           sintesi del violino (Web Audio), effetti, accordatura
+js/staff.js           disegno del pentagramma in chiave di violino (SVG)
+js/violin.js          manico del violino interattivo (SVG)
+js/games.js           motore di gioco: domande, punteggi, tempi, turni (nessun DOM)
+js/app.js             interfaccia, schermate, collegamento con il motore
+test/test-motore.js        verifica automatica della logica
+test/test-interfaccia.js   verifica dell'interfaccia con click reali (Chrome)
+```
+
+Nessuna libreria esterna, nessun passaggio di build.
+
+---
+
+## Verifiche
+
+```powershell
+node test/test-motore.js          # logica: note, diteggiature, domande, partite
+node test/test-interfaccia.js     # interfaccia: click veri del mouse (serve Chrome)
+```
+
+`test-motore.js` esegue ~15.800 controlli: nomi e frequenze delle note, diteggiature
+della 1ª posizione, coerenza di ogni livello (ogni nota delle domande deve essere davvero
+suonabile e avere una pallina cliccabile sul manico), generazione delle domande (una sola
+risposta giusta, opzioni con nomi tutti diversi), riconoscimento dei tipi di errore nel
+riepilogo e **pausa** (l'orologio non consuma tempo mentre si legge), più la simulazione di
+**tutte le 32 combinazioni gioco × livello** fino alla fine della partita.
+
+`test-interfaccia.js` apre l'app in Chrome headless e la usa con **eventi mouse reali**
+(cioè passando dal controllo di sovrapposizione degli elementi), verificando che nessun
+velo o modale dimenticata copra l'interfaccia, che ogni pulsante risponda davvero, che il
+riepilogo degli errori si apra e metta in pausa l'orologio, e che non compaia mai la
+scritta `undefined` a schermo (sintomo tipico di una proprietà scritta con un nome diverso
+da quello usato nell'interfaccia).
+Per eseguirlo serve l'app servita via HTTP:
+
+```powershell
+python -m http.server 8899
+node test/test-interfaccia.js
+```
+
+> Perché due test: un click fatto con `element.click()` da JavaScript funziona **anche**
+> sotto un velo trasparente, quindi non basta a garantire che l'app sia usabile. Solo un
+> click vero se ne accorge.
+
+---
+
+## Note tecniche
+
+* Browser moderni (Chrome, Edge, Firefox, Safari): usa `<script>` classici, quindi
+  funziona anche aperto da `file://`.
+* Il manico mostra le posizioni come "tasti" virtuali di semitono: cliccare una pallina
+  identifica la nota senza ambiguità e il numero dentro è il dito che la suona.
+* La sfida contemporanea tiene uno stato separato per ogni giocatore: la risposta di uno
+  non blocca l'altro.
+* Il tema scuro si attiva automaticamente con le preferenze di sistema.
+
+## Crediti
+
+* Chiave di violino: disegno vettoriale di **pubblico dominio** ricavato da
+  [Treble clef.svg](https://commons.wikimedia.org/wiki/File:Treble_clef.svg)
+  (Wikimedia Commons, PD-self). Nel file originale la chiave è disegnata insieme al
+  pentagramma, quindi è stato possibile ricavare la trasformazione esatta per allinearla
+  alla riga del Sol.
+* Tutto il resto (codice, sintesi sonora, grafica del manico) è originale.
