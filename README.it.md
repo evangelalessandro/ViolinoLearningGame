@@ -104,6 +104,28 @@ vedi sul pentagramma), l'accordatura Sol–Re–La–Mi e la tabella delle note 
 
 ---
 
+## Il suono del violino
+
+Non ci sono file audio: ogni nota è sintetizzata dal browser (Web Audio API) con un piccolo
+modello fisico dello strumento.
+
+* **Corda sfregata** — l'ampiezza delle armoniche segue `(1/n)·|sin(n·π·β)|`, lo spettro di
+  una corda suonata con l'archetto a una frazione β ≈ 1/8 della sua lunghezza: è da lì che
+  nasce il "buco" caratteristico sull'8ª armonica.
+* **Risonanze della cassa** — il suono passa poi per le risonanze fisse della cassa armonica:
+  la risonanza dell'aria A0 (~285 Hz), il modo "firma" B1 (~480 Hz) e il *bridge hill*
+  (~3 kHz) che dà al violino la sua brillantezza. Senza questo passaggio sembrerebbe un
+  organo, non un violino.
+* **Archetto** — un soffio continuo di crini sotto il suono, più un breve "stacco" all'attacco.
+* **Vibrato** — nasce dopo l'attacco, con due velocità leggermente diverse, e modula sia
+  l'altezza (±11 cent) sia l'intensità, come fa la mano del violinista.
+* **Pizzicato** — la stessa cassa, eccitata da un pizzico di rumore con decadimento rapido:
+  è il suono delle risposte giuste/sbagliate, così anche quelle restano "da violino".
+* Un limitatore morbido protegge l'uscita quando suonano più note insieme; l'accordatura
+  (Sol Re La Mi) usa lo stesso modello ad arco.
+
+---
+
 ## Come funziona il modello musicale
 
 * **Nomi delle note** — in italiano si chiamano **Do Re Mi Fa Sol La Si**, in inglese
@@ -145,6 +167,7 @@ js/games.js           motore di gioco: domande, punteggi, tempi, turni (nessun D
 js/app.js             interfaccia, schermate, collegamento con il motore
 test/test-motore.js        verifica automatica della logica
 test/test-interfaccia.js   verifica dell'interfaccia con click reali (Chrome)
+test/test-audio.js         verifica del timbro (analisi dello spettro, Chrome)
 ```
 
 Nessuna libreria esterna, nessun passaggio di build.
@@ -156,6 +179,7 @@ Nessuna libreria esterna, nessun passaggio di build.
 ```powershell
 node test/test-motore.js          # logica: note, diteggiature, domande, partite
 node test/test-interfaccia.js     # interfaccia: click veri del mouse (serve Chrome)
+node test/test-audio.js           # suono: spettro del violino sintetizzato (serve Chrome)
 ```
 
 `test-motore.js` esegue ~15.800 controlli: nomi e frequenze delle note, diteggiature
@@ -182,6 +206,13 @@ node test/test-interfaccia.js
 > Perché due test: un click fatto con `element.click()` da JavaScript funziona **anche**
 > sotto un velo trasparente, quindi non basta a garantire che l'app sia usabile. Solo un
 > click vero se ne accorge.
+
+`test-audio.js` renderizza le note con un `OfflineAudioContext` (quindi senza doverle
+suonare) e analizza lo spettro con la trasformata di Goertzel: verifica che l'altezza sia
+esatta entro pochi Hz, che la serie armonica sia quella della corda sfregata — compreso il
+"buco" sull'8ª armonica — che le risonanze della cassa colorino il suono dove devono, che il
+vibrato allarghi lo spettro attorno alla fondamentale, che l'arco sostenga il suono mentre il
+pizzicato decade, e che non ci sia clipping.
 
 ---
 

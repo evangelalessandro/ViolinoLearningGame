@@ -102,6 +102,28 @@ see it on the staff), the tuning G–D–A–E and the table of the notes on eac
 
 ---
 
+## The violin sound
+
+There are no audio files: every note is synthesised by the browser (Web Audio API) with a
+small physical model of the instrument.
+
+* **Bowed string** — harmonic amplitudes follow `(1/n)·|sin(n·π·β)|`, the spectrum of a string
+  bowed at a fraction β ≈ 1/8 of its length. That is where the characteristic gap on the
+  8th harmonic comes from.
+* **Body resonances** — the tone then passes through the fixed resonances of the violin body:
+  the air resonance A0 (~285 Hz), the "signature" B1 mode (~480 Hz) and the "bridge hill"
+  (~3 kHz) that gives the violin its brilliance. Without this stage it sounds like an organ,
+  not a violin.
+* **Bow** — continuous bow-hair noise under the tone, plus a short "catch" at the attack.
+* **Vibrato** — starts after the attack, at two slightly different speeds, and modulates both
+  pitch (±11 cents) and loudness, like a player's hand.
+* **Pizzicato** — the same body, excited by a short noise pluck with a fast decay: used for
+  the correct/wrong feedback, so even those sounds stay in the violin family.
+* A soft limiter protects the output when several notes overlap, and the tuning reference
+  (G D A E) uses the same bowed model.
+
+---
+
 ## How the musical model works
 
 * **Note names** — Italian mode uses **Do Re Mi Fa Sol La Si**, English mode uses
@@ -141,6 +163,7 @@ js/games.js           game engine: questions, scoring, timing, turns (no DOM)
 js/app.js             interface, screens, wiring with the engine
 test/test-motore.js          logic test suite
 test/test-interfaccia.js     interface test suite (real mouse events, Chrome)
+test/test-audio.js           violin timbre test suite (spectrum analysis, Chrome)
 ```
 
 No external libraries, no build step.
@@ -152,6 +175,7 @@ No external libraries, no build step.
 ```powershell
 node test/test-motore.js          # logic: notes, fingerings, questions, full games
 node test/test-interfaccia.js     # interface: real mouse clicks (needs Chrome)
+node test/test-audio.js           # sound: spectrum of the synthesised violin (needs Chrome)
 ```
 
 `test-motore.js` runs ~15,800 checks: note names and frequencies, 1st-position fingerings,
@@ -174,6 +198,13 @@ node test/test-interfaccia.js
 
 > Why two test suites: a click made with JavaScript's `element.click()` works **even under a
 > transparent veil**, so it cannot prove the app is usable. Only a real click notices.
+
+`test-audio.js` renders the notes with an `OfflineAudioContext` (so it does not need to play
+them) and analyses the spectrum with the Goertzel transform, checking that the pitch is exact
+within a few Hz, that the bowed-string harmonic series is the expected one — including the
+gap on the 8th harmonic — that the body resonances colour the sound where they should, that
+the vibrato widens the spectrum around the fundamental, that the sound is sustained while the
+pizzicato decays, and that nothing clips.
 
 ---
 
