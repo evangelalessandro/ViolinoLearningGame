@@ -35,6 +35,38 @@ window.Sound = (function () {
   const cacheOnde = new WeakMap();   // una cache per contesto (anche offline)
 
   /* ------------------------------------------------------------- contesto */
+  /**
+   * Catena di uscita: volume → limitatore → (diretto + riverbero) → destinazione.
+   * È una funzione a sé perché i test la costruiscono dentro un contesto offline
+   * e ne misurano l'uscita (un errore di collegamento qui azzera tutto il suono).
+   */
+  function catena(c, vol) {
+    const ingresso = c.createGain();
+    ingresso.gain.value = (vol == null ? 1 : vol);
+
+    // limitatore morbido: protegge dai picchi quando suonano più note insieme
+    const lim = c.createDynamicsCompressor();
+    lim.threshold.value = -10;
+    lim.knee.value = 6;
+    lim.ratio.value = 4;
+    lim.attack.value = 0.004;
+    lim.release.value = 0.18;
+    ingresso.connect(lim);
+
+    const dry = c.createGain();
+    dry.gain.value = 1;
+    lim.connect(dry).connect(c.destination);
+
+    // Riverbero a convoluzione con impulso generato (sala piccola)
+    const conv = c.createConvolver();
+    conv.buffer = creaImpulso(c, 1.8, 2.8);
+    const wet = c.createGain();
+    wet.gain.value = 0.22;
+    lim.connect(conv).connect(wet).connect(c.destination);
+
+    return { ingresso: ingresso, lim: lim, dry: dry, wet: wet };
+  }
+
   function init() {
     if (ctx) {
       if (ctx.state === 'suspended') { ctx.resume(); }
@@ -43,30 +75,7 @@ window.Sound = (function () {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
     ctx = new AC();
-
-    master = ctx.createGain();
-    master.gain.value = volume;
-
-    // limitatore morbido: protegge dai picchi quando suonano più note insieme
-    const lim = ctx.createDynamicsCompressor();
-    lim.threshold.value = -10;
-    lim.knee.value = 6;
-    lim.ratio.value = 4;
-    lim.attack.value = 0.004;
-    lim.release.value = 0.18;
-    master.connect(lim);
-
-    const dry = ctx.createGain();
-    dry.gain.value = 1;
-    lim.connect(dry).connect(ctx.destination);
-
-    // Riverbero a convoluzione con impulso generato (sala piccola)
-    const conv = ctx.createConvolver();
-    conv.buffer = creaImpulso(ctx, 1.8, 2.8);
-    const wet = ctx.createGain();
-    wet.gain.value = 0.22;
-    lim.connect(conv).connect(wet).connect(ctx.destination);
-
+    master = catena(ctx, volume).ingresso;
     return ctx;
   }
 
@@ -153,7 +162,10 @@ window.Sound = (function () {
    */
   function voceArco(c, m, dur, opt) {
     opt = opt || {};
-    const t0 = opt.delay || 0;
+    // ATTENZIONE: il tempo va preso da currentTime, non da zero. In un contesto
+    // già avviato (quello del browser) programmare l'inviluppo a partire da 0 lo
+    // metterebbe tutto nel passato e la nota resterebbe muta.
+    const t0 = c.currentTime + (opt.delay || 0);
     const f = T.freqMidi(m);
     const picco = Math.max(0.0002, 0.24 * (opt.gain == null ? 1 : opt.gain));
 
@@ -252,7 +264,7 @@ window.Sound = (function () {
   /* --------------------------------------------------------- voce pizzicata */
   function vocePizzicato(c, m, dur, opt) {
     opt = opt || {};
-    const t0 = opt.delay || 0;
+    const t0 = c.currentTime + (opt.delay || 0);   // come sopra: mai partire da 0
     const f = T.freqMidi(m);
     const picco = Math.max(0.0002, 0.3 * (opt.gain == null ? 1 : opt.gain));
     const durata = dur || 0.9;
@@ -290,24 +302,149 @@ window.Sound = (function () {
     return { uscita: inv, sorgenti: sorgenti, stop: stop, t0: t0 };
   }
 
+  /* ------------------------------------------------------- campioni reali --- */
+  /* Violino solo registrato (arco con vibrato e pizzicato) da VSCO 2 Community
+     Edition, licenza CC0 1.0 Universal: vedi sounds/LICENSE.md.
+     `hz` è l'intonazione REALE misurata di ogni file (tools/misura-campioni.js):
+     il playbackRate si calcola da lì, così la nota esce esattamente intonata
+     anche se il campione originale è un po' calante o crescente. */
+  const CAMPIONI = [
+    { nota: 'G3', file: 'sounds/arco-G3.wav', hz: 195.56 },
+    { nota: 'A3', file: 'sounds/arco-A3.wav', hz: 220.20 },
+    { nota: 'C4', file: 'sounds/arco-C4.wav', hz: 265.16 },
+    { nota: 'E4', file: 'sounds/arco-E4.wav', hz: 330.64 },
+    { nota: 'G4', file: 'sounds/arco-G4.wav', hz: 393.52 },
+    { nota: 'A4', file: 'sounds/arco-A4.wav', hz: 440.40 },
+    { nota: 'C5', file: 'sounds/arco-C5.wav', hz: 522.82 },
+    { nota: 'E5', file: 'sounds/arco-E5.wav', hz: 661.08 },
+    { nota: 'G5', file: 'sounds/arco-G5.wav', hz: 780.83 },
+    { nota: 'A5', file: 'sounds/arco-A5.wav', hz: 877.80 },
+    { nota: 'C6', file: 'sounds/arco-C6.wav', hz: 1040.44 }
+  ];
+  const CAMPIONE_PIZZ = { nota: 'A4', file: 'sounds/pizz-A4.wav', hz: 439.40 };
+
+  let campioni = null;          // campioni ad arco decodificati
+  let campionePizz = null;      // campione pizzicato (per i suoni dell'interfaccia)
+  let caricamento = null;
+  let statoCaricamento = 'fermo';   // fermo | in corso | pronto | non-disponibile
+
+  /** Sceglie il campione più vicino in altezza (distanza in cent). */
+  function scegliCampione(hz, elenco) {
+    let scelto = elenco[0], migliore = Infinity;
+    elenco.forEach(function (s) {
+      const d = Math.abs(Math.log2(hz / s.hz));
+      if (d < migliore) { migliore = d; scelto = s; }
+    });
+    return scelto;
+  }
+
+  /** Scarica e decodifica i campioni. Se non riesce, l'app usa la sintesi. */
+  function caricaCampioni() {
+    if (caricamento) return caricamento;
+    const c = init();
+    if (!c || typeof fetch !== 'function') {
+      statoCaricamento = 'non-disponibile';
+      return Promise.resolve(false);
+    }
+    statoCaricamento = 'in corso';
+    const scarica = function (elenco) {
+      return Promise.all(elenco.map(function (s) {
+        return fetch(s.file)
+          .then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status + ' su ' + s.file);
+            return r.arrayBuffer();
+          })
+          .then(function (buf) {
+            return new Promise(function (res, rej) { c.decodeAudioData(buf, res, rej); });
+          })
+          .then(function (audio) { return { hz: s.hz, buffer: audio }; });
+      }));
+    };
+    caricamento = Promise.all([scarica(CAMPIONI), scarica([CAMPIONE_PIZZ])])
+      .then(function (r) {
+        campioni = r[0];
+        campionePizz = r[1][0];
+        statoCaricamento = 'pronto';
+        return true;
+      })
+      .catch(function () {
+        campioni = null;
+        campionePizz = null;
+        statoCaricamento = 'non-disponibile';
+        return false;
+      });
+    return caricamento;
+  }
+
+  /** Avvia il caricamento dei campioni (chiamata all'avvio dell'app). */
+  function prepara() {
+    init();
+    return caricaCampioni();
+  }
+
+  function campioniPronti() { return statoCaricamento === 'pronto'; }
+  function statoCampioni() { return statoCaricamento; }
+
+  /**
+   * Voce costruita da un campione registrato: il playbackRate intona la nota.
+   * Non passa dalla cassa armonica simulata: la registrazione la contiene già.
+   */
+  function voceCampione(c, m, dur, opt, elenco, pizz) {
+    const hz = T.freqMidi(m);
+    const s = scegliCampione(hz, elenco);
+    const rate = hz / s.hz;
+    const t0 = c.currentTime + (opt.delay || 0);
+    const picco = Math.max(0.0002, opt.gain == null ? 1 : opt.gain);
+
+    const src = c.createBufferSource();
+    src.buffer = s.buffer;
+    src.playbackRate.value = rate;
+
+    const g = c.createGain();
+    const durata = s.buffer.duration / rate;      // durata del campione alla nuova altezza
+    const tenuta = Math.max(0.1, Math.min(dur, durata - 0.35));
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(picco, t0 + 0.012);
+    if (tenuta < durata - 0.2) {                  // se serve più corta, si chiude prima
+      g.gain.setValueAtTime(picco, t0 + tenuta);
+      g.gain.setTargetAtTime(0.0001, t0 + tenuta, pizz ? 0.05 : 0.12);
+    }
+    src.connect(g).connect(opt.destinazione);
+    src.start(t0);
+    const stop = t0 + durata + 0.3;
+    src.stop(stop);
+    return { uscita: g, sorgenti: [src], stop: stop, t0: t0, campione: s, rate: rate };
+  }
+
   /* ------------------------------------------------------------- riproduzione */
   /**
-   * Suona un'altezza MIDI con timbro di violino.
+   * Suona un'altezza MIDI. Usa i campioni registrati; se non sono disponibili
+   * (per esempio aprendo l'app da file://, dove il browser blocca la lettura dei
+   * file) ricade sulla sintesi, così il suono c'è comunque.
    * @param {number} m    MIDI
    * @param {number} dur  durata in secondi
-   * @param {object} opt  { delay, gain, pizzicato, arco, cassa }
+   * @param {object} opt  { delay, gain, pizzicato, sintesi, arco, cassa, vibrato }
    */
   function playMidi(m, dur, opt) {
     const c = init();
     if (!c || !enabled) return;
     opt = opt || {};
     dur = dur || 1.1;
-    const v = opt.pizzicato
-      ? vocePizzicato(c, m, dur, { delay: opt.delay, gain: opt.gain, cassa: opt.cassa, destinazione: master })
-      : voceArco(c, m, dur, {
-        delay: opt.delay, gain: opt.gain, cassa: opt.cassa, arco: opt.arco,
-        armoniche: opt.armoniche, vibrato: opt.vibrato, destinazione: master
-      });
+
+    // alla prima nota richiesta si avvia il caricamento dei campioni: così
+    // partono anche se il primo tocco non è arrivato (o è arrivato su altro)
+    if (statoCaricamento === 'fermo') caricaCampioni();
+
+    const elenco = opt.pizzicato ? (campionePizz ? [campionePizz] : null) : campioni;
+    const usaCampioni = !opt.sintesi && !!elenco;
+    const v = usaCampioni
+      ? voceCampione(c, m, dur, { delay: opt.delay, gain: opt.gain, destinazione: master }, elenco, !!opt.pizzicato)
+      : (opt.pizzicato
+        ? vocePizzicato(c, m, dur, { delay: opt.delay, gain: opt.gain, cassa: opt.cassa, destinazione: master })
+        : voceArco(c, m, dur, {
+          delay: opt.delay, gain: opt.gain, cassa: opt.cassa, arco: opt.arco,
+          armoniche: opt.armoniche, vibrato: opt.vibrato, destinazione: master
+        }));
 
     const voce = {
       stop: function (subito) {
@@ -398,29 +535,83 @@ window.Sound = (function () {
   /**
    * Renderizza una nota fuori dal tempo reale: serve ai test per analizzare lo
    * spettro (formanti della cassa, altezza, decadimento) senza poter ascoltare.
+   * Con `catena: true` passa per tutta l'uscita (limitatore e riverbero).
    */
   function rendiOffline(m, dur, opt) {
     opt = opt || {};
     const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
     if (!OAC) return Promise.reject(new Error('OfflineAudioContext non disponibile'));
     const rate = opt.sampleRate || 44100;
-    const lunghezza = Math.ceil(rate * (dur + 1.2));
+    const lunghezza = Math.ceil(rate * ((opt.avviaDopo || 0) + dur + 1.2));
     const oc = new OAC(1, lunghezza, rate);
-    const fuori = oc.createGain();
-    fuori.gain.value = 1;
-    fuori.connect(oc.destination);
+    let destinazione;
+    if (opt.catena) {
+      destinazione = catena(oc, opt.volume == null ? volume : opt.volume).ingresso;
+    } else {
+      destinazione = oc.createGain();
+      destinazione.gain.value = 1;
+      destinazione.connect(oc.destination);
+    }
     const config = {
       delay: 0, gain: opt.gain == null ? 1 : opt.gain, arco: opt.arco,
       armoniche: opt.armoniche, cassa: opt.cassa, vibrato: opt.vibrato,
-      destinazione: fuori
+      destinazione: destinazione
     };
-    if (opt.pizzicato) vocePizzicato(oc, m, dur, config);
-    else voceArco(oc, m, dur, config);
+    const costruisci = function () {
+      if (opt.pizzicato) vocePizzicato(oc, m, dur, config);
+      else voceArco(oc, m, dur, config);
+    };
+    // `avviaDopo` simula un contesto già avviato da un po' (come quello del
+    // browser): serve a verificare che la nota parta comunque, invece di
+    // programmare l'inviluppo nel passato.
+    const avvio = opt.avviaDopo || 0;
+    if (avvio > 0) {
+      oc.suspend(avvio).then(function () { costruisci(); oc.resume(); });
+      return oc.startRendering();
+    }
+    costruisci();
     return oc.startRendering();
+  }
+
+  /**
+   * Renderizza una nota suonata da un campione registrato, scaricato e
+   * decodificato nello stesso contesto offline. Serve ai test per verificare
+   * che il campione esca davvero intonato sulla nota richiesta.
+   */
+  function rendiCampioneOffline(m, dur, opt) {
+    opt = opt || {};
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return Promise.reject(new Error('OfflineAudioContext non disponibile'));
+    const rate = opt.sampleRate || 44100;
+    const oc = new OAC(1, Math.ceil(rate * (dur + 1.2)), rate);
+    const fuori = oc.createGain();
+    fuori.gain.value = 1;
+    fuori.connect(oc.destination);
+    const elenco = opt.pizzicato ? [CAMPIONE_PIZZ] : CAMPIONI;
+    // si scarica solo il campione che verrà davvero usato per questa nota
+    const scelto = scegliCampione(T.freqMidi(m), elenco);
+    return fetch(scelto.file)
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' su ' + scelto.file);
+        return r.arrayBuffer();
+      })
+      .then(function (buf) {
+        return new Promise(function (res, rej) { oc.decodeAudioData(buf, res, rej); });
+      })
+      .then(function (audio) {
+        voceCampione(oc, m, dur, { gain: opt.gain == null ? 1 : opt.gain, destinazione: fuori },
+          [{ hz: scelto.hz, buffer: audio }], !!opt.pizzicato);
+        return oc.startRendering();
+      });
   }
 
   return {
     init: init,
+    prepara: prepara,
+    caricaCampioni: caricaCampioni,
+    campioniPronti: campioniPronti,
+    statoCampioni: statoCampioni,
+    CAMPIONI: CAMPIONI,
     playMidi: playMidi,
     pizzicato: pizzicato,
     playNote: playNote,
@@ -430,6 +621,7 @@ window.Sound = (function () {
     accorda: accorda,
     accordaturaCompleta: accordaturaCompleta,
     rendiOffline: rendiOffline,
+    rendiCampioneOffline: rendiCampioneOffline,
     isEnabled: function () { return enabled; },
     setEnabled: function (v) {
       enabled = !!v;

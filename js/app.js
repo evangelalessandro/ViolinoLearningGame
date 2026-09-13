@@ -1049,7 +1049,12 @@
     });
     document.addEventListener('keydown', onKey);
     const sblocca = function () {
-      if (typeof Sound !== 'undefined') Sound.init();
+      if (typeof Sound !== 'undefined') {
+        Sound.init();
+        // i campioni registrati si scaricano al primo tocco: fino ad allora
+        // (o se il browser blocca i file, es. da file://) suona la sintesi
+        if (Sound.caricaCampioni) Sound.caricaCampioni();
+      }
       document.removeEventListener('pointerdown', sblocca);
     };
     document.addEventListener('pointerdown', sblocca);

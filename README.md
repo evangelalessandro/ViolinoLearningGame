@@ -104,23 +104,25 @@ see it on the staff), the tuning G–D–A–E and the table of the notes on eac
 
 ## The violin sound
 
-There are no audio files: every note is synthesised by the browser (Web Audio API) with a
-small physical model of the instrument.
+The notes you hear are **real violin recordings**, not a synthetic tone.
 
-* **Bowed string** — harmonic amplitudes follow `(1/n)·|sin(n·π·β)|`, the spectrum of a string
-  bowed at a fraction β ≈ 1/8 of its length. That is where the characteristic gap on the
-  8th harmonic comes from.
-* **Body resonances** — the tone then passes through the fixed resonances of the violin body:
-  the air resonance A0 (~285 Hz), the "signature" B1 mode (~480 Hz) and the "bridge hill"
-  (~3 kHz) that gives the violin its brilliance. Without this stage it sounds like an organ,
-  not a violin.
-* **Bow** — continuous bow-hair noise under the tone, plus a short "catch" at the attack.
-* **Vibrato** — starts after the attack, at two slightly different speeds, and modulates both
-  pitch (±11 cents) and loudness, like a player's hand.
-* **Pizzicato** — the same body, excited by a short noise pluck with a fast decay: used for
-  the correct/wrong feedback, so even those sounds stay in the violin family.
-* A soft limiter protects the output when several notes overlap, and the tuning reference
-  (G D A E) uses the same bowed model.
+* **Samples** — the *Solo Violin* recordings from **VSCO 2 Community Edition**, released
+  under **CC0 1.0 Universal** (public domain). Eleven bowed notes with real vibrato covering
+  G3–C6, plus a pizzicato used for the interface sounds. They live in `sounds/`, are mono
+  22 050 Hz WAV, and weigh about 1 MB in total. Provenance and processing are documented in
+  [`sounds/LICENSE.md`](sounds/LICENSE.md) and the preparation script is
+  [`tools/prepara-campioni.js`](tools/prepara-campioni.js).
+* **Tuning** — the real pitch of every recording was measured with
+  [`tools/misura-campioni.js`](tools/misura-campioni.js) and stored in `js/audio.js`, so
+  playback is transposed exactly onto the requested note. One of the original notes is
+  23 cents sharp: without this correction it would sound out of tune.
+* **Playback** — each note uses the nearest sample, transposed by at most two semitones,
+  through a soft limiter and a short convolution reverb.
+* **Fallback** — if the browser refuses to read the sample files (which happens when
+  `index.html` is opened directly from `file://`, because local file reads are blocked), the
+  app synthesises the violin instead: bowed-string spectrum `(1/n)·|sin(n·π·β)|`, body
+  resonances (A0 ~285 Hz, B1 ~480 Hz, bridge hill ~3 kHz), bow-hair noise, vibrato and a
+  pizzicato model. Notes are therefore always audible, sampled or synthesised.
 
 ---
 
@@ -161,6 +163,8 @@ js/staff.js           treble staff drawing (SVG)
 js/violin.js          interactive violin fingerboard (SVG)
 js/games.js           game engine: questions, scoring, timing, turns (no DOM)
 js/app.js             interface, screens, wiring with the engine
+sounds/               recorded violin samples (VSCO 2 CE, CC0) + licence
+tools/                sample preparation and tuning measurement scripts
 test/test-motore.js          logic test suite
 test/test-interfaccia.js     interface test suite (real mouse events, Chrome)
 test/test-audio.js           violin timbre test suite (spectrum analysis, Chrome)
@@ -222,6 +226,10 @@ pizzicato decays, and that nothing clips.
 
 ## Credits
 
+* Violin samples: **Solo Violin** from
+  [VSCO 2 Community Edition](https://github.com/sgossner/VSCO-2-CE) by Versilian Studios LLC,
+  released under **CC0 1.0 Universal** (public domain dedication). See
+  [sounds/LICENSE.md](sounds/LICENSE.md).
 * Treble clef: **public domain** vector drawing taken from
   [Treble clef.svg](https://commons.wikimedia.org/wiki/File:Treble_clef.svg)
   (Wikimedia Commons, PD-self). In the original file the clef is drawn together with the

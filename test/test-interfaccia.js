@@ -79,7 +79,7 @@ if (!CHROME) {
 
   async function valuta(espr) {
     const r = await invia('Runtime.evaluate', {
-      expression: '(function(){' + espr + '})()', returnByValue: true
+      expression: '(function(){' + espr + '})()', returnByValue: true, awaitPromise: true
     });
     if (r.exceptionDetails) {
       return 'ECCEZIONE: ' + (r.exceptionDetails.exception && r.exceptionDetails.exception.description);
@@ -344,6 +344,12 @@ if (!CHROME) {
       'return n.every(function(x){return /^(Do|Re|Mi|Fa|Sol|La|Si)[♯♭]?$/.test(x);});'), true);
     await clickVero('#btn-esci');
     await attesa(400);
+
+    console.log('── Violino campionato nell\'app ' + '─'.repeat(35));
+    check('campioni caricati dopo i primi tocchi', await valuta('return Sound.statoCampioni();'), 'pronto');
+    check('campioni previsti', await valuta('return Sound.CAMPIONI.length;'), 11);
+    check('i file audio sono raggiungibili', await valuta(
+      'return fetch("sounds/arco-A4.wav").then(function (r) { return r.ok; });'), true);
 
     /* Nessuna scritta "undefined"/"NaN" dev'essere visibile: è il sintomo tipico
        di una proprietà scritta con un nome diverso da quello usato nell'interfaccia. */

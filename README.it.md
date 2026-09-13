@@ -106,23 +106,25 @@ vedi sul pentagramma), l'accordatura Sol–Re–La–Mi e la tabella delle note 
 
 ## Il suono del violino
 
-Non ci sono file audio: ogni nota è sintetizzata dal browser (Web Audio API) con un piccolo
-modello fisico dello strumento.
+Le note che senti sono **registrazioni reali di violino**, non un tono sintetico.
 
-* **Corda sfregata** — l'ampiezza delle armoniche segue `(1/n)·|sin(n·π·β)|`, lo spettro di
-  una corda suonata con l'archetto a una frazione β ≈ 1/8 della sua lunghezza: è da lì che
-  nasce il "buco" caratteristico sull'8ª armonica.
-* **Risonanze della cassa** — il suono passa poi per le risonanze fisse della cassa armonica:
-  la risonanza dell'aria A0 (~285 Hz), il modo "firma" B1 (~480 Hz) e il *bridge hill*
-  (~3 kHz) che dà al violino la sua brillantezza. Senza questo passaggio sembrerebbe un
-  organo, non un violino.
-* **Archetto** — un soffio continuo di crini sotto il suono, più un breve "stacco" all'attacco.
-* **Vibrato** — nasce dopo l'attacco, con due velocità leggermente diverse, e modula sia
-  l'altezza (±11 cent) sia l'intensità, come fa la mano del violinista.
-* **Pizzicato** — la stessa cassa, eccitata da un pizzico di rumore con decadimento rapido:
-  è il suono delle risposte giuste/sbagliate, così anche quelle restano "da violino".
-* Un limitatore morbido protegge l'uscita quando suonano più note insieme; l'accordatura
-  (Sol Re La Mi) usa lo stesso modello ad arco.
+* **Campioni** — le registrazioni di *Solo Violin* di **VSCO 2 Community Edition**, rilasciate
+  con licenza **CC0 1.0 Universal** (dominio pubblico). Undici note ad arco con vibrato vero
+  dal Sol3 al Do6, più un pizzicato per i suoni dell'interfaccia. Stanno in `sounds/`, sono
+  WAV mono a 22 050 Hz e pesano circa 1 MB in tutto. Provenienza e lavorazione sono
+  documentate in [`sounds/LICENSE.md`](sounds/LICENSE.md) e lo script di preparazione è
+  [`tools/prepara-campioni.js`](tools/prepara-campioni.js).
+* **Intonazione** — l'altezza reale di ogni registrazione è stata misurata con
+  [`tools/misura-campioni.js`](tools/misura-campioni.js) e salvata in `js/audio.js`, così la
+  riproduzione viene trasposta esattamente sulla nota richiesta. Una delle note originali è
+  23 cent crescente: senza questa correzione suonerebbe scordata.
+* **Riproduzione** — ogni nota usa il campione più vicino, trasposto al massimo di due
+  semitoni, attraverso un limitatore morbido e un breve riverbero.
+* **Ripiego** — se il browser non riesce a leggere i file dei campioni (succede aprendo
+  `index.html` direttamente da `file://`, perché la lettura dei file locali è bloccata), l'app
+  sintetizza il violino: spettro della corda sfregata `(1/n)·|sin(n·π·β)|`, risonanze della
+  cassa (A0 ~285 Hz, B1 ~480 Hz, bridge hill ~3 kHz), rumore dell'archetto, vibrato e un
+  modello di pizzicato. Le note si sentono quindi sempre, campionate o sintetizzate.
 
 ---
 
@@ -165,6 +167,8 @@ js/staff.js           disegno del pentagramma in chiave di violino (SVG)
 js/violin.js          manico del violino interattivo (SVG)
 js/games.js           motore di gioco: domande, punteggi, tempi, turni (nessun DOM)
 js/app.js             interfaccia, schermate, collegamento con il motore
+sounds/               campioni di violino registrati (VSCO 2 CE, CC0) + licenza
+tools/                script di preparazione dei campioni e di misura dell'intonazione
 test/test-motore.js        verifica automatica della logica
 test/test-interfaccia.js   verifica dell'interfaccia con click reali (Chrome)
 test/test-audio.js         verifica del timbro (analisi dello spettro, Chrome)
@@ -230,6 +234,10 @@ pizzicato decade, e che non ci sia clipping.
 
 ## Crediti
 
+* Campioni di violino: *Solo Violin* di
+  [VSCO 2 Community Edition](https://github.com/sgossner/VSCO-2-CE) di Versilian Studios LLC,
+  rilasciati con licenza **CC0 1.0 Universal** (dedica al pubblico dominio). Vedi
+  [sounds/LICENSE.md](sounds/LICENSE.md).
 * Chiave di violino: disegno vettoriale di **pubblico dominio** ricavato da
   [Treble clef.svg](https://commons.wikimedia.org/wiki/File:Treble_clef.svg)
   (Wikimedia Commons, PD-self). Nel file originale la chiave è disegnata insieme al

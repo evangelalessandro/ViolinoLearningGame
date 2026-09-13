@@ -70,6 +70,16 @@ window.__audio = (function () {
     for (let i = i0; i < i1; i++) s += d[i] * d[i];
     return Math.sqrt(s / Math.max(1, i1 - i0));
   }
+  function piccoDi(d) {
+    let p = 0;
+    for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > p) p = a; }
+    return p;
+  }
+  function nonNulli(d) {
+    let n = 0;
+    for (let i = 0; i < d.length; i++) { if (Math.abs(d[i]) > 1e-5) n++; }
+    return n;
+  }
   return {
     analizza: function (midi, dur, opt) {
       return Sound.rendiOffline(midi, dur, opt || {}).then(function (buf) {
@@ -98,6 +108,35 @@ window.__audio = (function () {
           rmsMeta: +rms(d, rate, 0.5, 0.7).toFixed(5),
           rmsFine: +rms(d, rate, 1.0, 1.2).toFixed(5),
           picco: +picco.toFixed(4)
+        };
+      });
+    },
+    /* La stessa misura ma attraverso tutta la catena di uscita
+       (volume, limitatore, riverbero): è il percorso che sente l'utente */
+    analizzaCatena: function (midi, dur, opt) {
+      const o = Object.assign({}, opt || {}, { catena: true });
+      return Sound.rendiOffline(midi, dur, o).then(function (buf) {
+        const d = buf.getChannelData(0);
+        const rate = buf.sampleRate;
+        return {
+          rms: +rms(d, rate, 0.1, Math.min(dur, 1.0)).toFixed(5),
+          rmsFine: +rms(d, rate, 1.0, 1.2).toFixed(5),
+          picco: +piccoDi(d).toFixed(4),
+          campioniNonZero: nonNulli(d)
+        };
+      });
+    },
+    /* Nota programmata quando il contesto è già avviato da N secondi:
+       è il caso reale del browser (dove currentTime non è mai 0). */
+    analizzaTardiva: function (midi, dur, avviaDopo, opt) {
+      const o = Object.assign({}, opt || {}, { avviaDopo: avviaDopo });
+      return Sound.rendiOffline(midi, dur, o).then(function (buf) {
+        const d = buf.getChannelData(0);
+        const rate = buf.sampleRate;
+        return {
+          prima: +rms(d, rate, 0.1, Math.max(0.2, avviaDopo - 0.3)).toFixed(5),
+          dopo: +rms(d, rate, avviaDopo + 0.2, avviaDopo + 0.5).toFixed(5),
+          picco: +piccoDi(d).toFixed(4)
         };
       });
     }
@@ -184,6 +223,30 @@ function sezione(t) { console.log('\n── ' + t + ' ' + '─'.repeat(Math.max(
     const BETA = 0.12;   // punto di contatto dell'archetto: deve combaciare con audio.js
     const teoria = function (n) { return (1 / n) * Math.abs(Math.sin(n * Math.PI * BETA)); };
 
+    /* ---------------------------------------- 0. l'uscita produce suono ----- */
+    sezione('0. Il suono esce davvero dalla catena di uscita');
+    const uscita = await valuta('return window.__audio.analizzaCatena(69, 1.0, {});');
+    if (uscita.__errore) throw new Error(uscita.__errore);
+    ok('la catena volume→limitatore→riverbero produce segnale',
+      uscita.rms > 0.01, 'rms ' + uscita.rms);
+    ok('il segnale dura per tutta la nota', uscita.rmsFine > 0.004,
+      'rms 1,0-1,2s = ' + uscita.rmsFine);
+    ok('nessun campione fuori scala', uscita.picco <= 1 && uscita.picco > 0.05,
+      'picco ' + uscita.picco);
+    ok('il campione non è tutto silenzio', uscita.campioniNonZero > 20000,
+      uscita.campioniNonZero + ' campioni non nulli');
+
+    /* Il caso che nel browser rendeva tutto muto: la nota viene programmata
+       quando il contesto è già avviato da un po' (currentTime > 0). */
+    const tardiva = await valuta('return window.__audio.analizzaTardiva(69, 1.0, 1.5, {});');
+    if (tardiva.__errore) throw new Error('analizzaTardiva: ' + tardiva.__errore);
+    ok('silenzio prima che la nota parta', tardiva.prima < 0.005, 'rms ' + tardiva.prima);
+    ok('la nota suona anche se il contesto è già avviato', tardiva.dopo > 0.01,
+      'rms dopo l\'avvio = ' + tardiva.dopo);
+    const tardivaPizz = await valuta('return window.__audio.analizzaTardiva(69, 0.9, 2.2, {pizzicato:true});');
+    ok('anche il pizzicato suona a contesto avviato', tardivaPizz.dopo > 0.005,
+      'rms = ' + tardivaPizz.dopo);
+
     /* ---------------------------------------- 1. la corda sfregata ---------- */
     sezione('1. Spettro della corda sfregata (senza cassa armonica)');
     const nudo = await valuta('return window.__audio.analizza(69, 1.2, {cassa: 0, vibrato: false, arco: false});');
@@ -216,8 +279,7 @@ function sezione(t) { console.log('\n── ' + t + ' ' + '─'.repeat(Math.max(
       guadagno.slice(0, 4).map(function (v) { return v.toFixed(2); }).join(', '));
 
     /* ---------------------------------------- 3. altezza e vibrato --------- */
-    sezione('3. Altezza, vibrato e sostegno');
-    const conVib = await valuta('return window.__audio.analizza(69, 1.2, {});');
+    sezione('3. Altezza, vibrato e sostegno');    const conVib = await valuta('return window.__audio.analizza(69, 1.2, {});');
     ok('La4 intonato anche col vibrato', Math.abs(conVib.fStimata - 440) <= 6,
       conVib.fStimata.toFixed(1) + ' Hz');
     ok('il vibrato allarga lo spettro ai lati della fondamentale',
@@ -263,6 +325,70 @@ function sezione(t) { console.log('\n── ' + t + ' ' + '─'.repeat(Math.max(
     ok('Fa♯4 = 370,0 Hz e distinto da Fa4',
       Math.abs(faD.fStimata - 369.99) <= 4 && Math.abs(faD.fStimata - fa4.fStimata) > 15,
       faD.fStimata.toFixed(1) + ' Hz contro ' + fa4.fStimata.toFixed(1) + ' Hz');
+
+    /* ---------------------------------------- 7. campioni registrati ------- */
+    sezione('7. Campioni di violino registrati (VSCO 2 CE, CC0)');
+    const caricati = await valuta(
+      'return Sound.caricaCampioni().then(function (ok) {' +
+      '  return { ok: ok, stato: Sound.statoCampioni(), quanti: Sound.CAMPIONI.length };' +
+      '});');
+    if (caricati.__errore) throw new Error('caricamento campioni: ' + caricati.__errore);
+    ok('i campioni si caricano dal server', caricati.ok === true, 'stato: ' + caricati.stato);
+    ok('ci sono tutti i campioni previsti', caricati.quanti === 11, caricati.quanti + ' campioni ad arco');
+
+    const uscitaCampione = await valuta(
+      'return Sound.rendiCampioneOffline(69, 1.4, {}).then(function (buf) {' +
+      '  var d = buf.getChannelData(0), rate = buf.sampleRate;' +
+      '  var p = 0; for (var i = 0; i < d.length; i++) { var a = Math.abs(d[i]); if (a > p) p = a; }' +
+      '  var r = 0, n = 0; for (var i = Math.floor(0.6*rate); i < Math.floor(0.9*rate); i++) { r += d[i]*d[i]; n++; }' +
+      '  return { picco: +p.toFixed(4), rms: +Math.sqrt(r/n).toFixed(5) };' +
+      '});');
+    ok('il campione suona', uscitaCampione.rms > 0.02, 'rms ' + uscitaCampione.rms);
+    ok('il campione non distorce', uscitaCampione.picco <= 1.01, 'picco ' + uscitaCampione.picco);
+
+    /* La nota suonata dal campione dev'essere intonata. Il campione ha vibrato
+       vero, quindi si misura come in tools/misura-campioni.js: si cerca il picco
+       su finestre corte e si prende la mediana (il centro dell'oscillazione). */
+    for (const caso of [{ m: 69, nome: 'La4', hz: 440 }, { m: 62, nome: 'Re4', hz: 293.66 },
+    { m: 55, nome: 'Sol3', hz: 196 }, { m: 84, nome: 'Do6', hz: 1046.5 }]) {
+      const misura = await valuta(
+        'return Sound.rendiCampioneOffline(' + caso.m + ', 1.5, {}).then(function (buf) {' +
+        '  var d = buf.getChannelData(0), rate = buf.sampleRate, f = ' + caso.hz + ';' +
+        '  function g(freq, i0, i1) {' +
+        '    var N = i1 - i0, k = 2*Math.cos(2*Math.PI*freq/rate), s1 = 0, s2 = 0;' +
+        '    for (var i = 0; i < N; i++) {' +
+        '      var w = 0.5 - 0.5*Math.cos(2*Math.PI*i/(N-1));' +
+        '      var s0 = d[i0+i]*w + k*s1 - s2; s2 = s1; s1 = s0; }' +
+        '    var re = s1 - s2*Math.cos(2*Math.PI*freq/rate), im = s2*Math.sin(2*Math.PI*freq/rate);' +
+        '    return Math.sqrt(re*re + im*im)*2/N; }' +
+        '  var lung = Math.floor(0.35*rate), stime = [];' +
+        '  for (var inizio = 0.2; inizio + 0.35 <= 1.4; inizio += 0.3) {' +
+        '    var i0 = Math.floor(inizio*rate), i1 = i0 + lung, best = -1, bf = 0;' +
+        '    for (var x = f*0.96; x <= f*1.04; x += 0.1) { var v = g(x, i0, i1); if (v > best) { best = v; bf = x; } }' +
+        '    stime.push(bf); }' +
+        '  stime.sort(function (a, b) { return a - b; });' +
+        '  var med = stime[Math.floor(stime.length/2)];' +
+        '  return { hz: med, cent: 1200*Math.log2(med/f) };' +
+        '});');
+      if (misura.__errore) throw new Error('misura campione: ' + misura.__errore);
+      ok('campione intonato su ' + caso.nome,
+        Math.abs(misura.cent) < 20,
+        misura.hz.toFixed(1) + ' Hz (' + misura.cent.toFixed(0) + ' cent)');
+    }
+
+    /* Anche il suono di risposta giusta dev'essere un campione di violino. */
+    const pizzCampione = await valuta(
+      'return Sound.rendiCampioneOffline(76, 0.8, {pizzicato:true}).then(function (buf) {' +
+      '  var d = buf.getChannelData(0), rate = buf.sampleRate, p = 0;' +
+      '  for (var i = 0; i < d.length; i++) { var a = Math.abs(d[i]); if (a > p) p = a; }' +
+      '  var inizio = 0, fine = 0, n = 0;' +
+      '  for (var i = Math.floor(0.02*rate); i < Math.floor(0.15*rate); i++) inizio += d[i]*d[i];' +
+      '  for (var i = Math.floor(0.6*rate); i < Math.floor(0.75*rate); i++) { fine += d[i]*d[i]; n++; }' +
+      '  return { picco: +p.toFixed(4), inizio: Math.sqrt(inizio/(0.13*rate)), fine: Math.sqrt(fine/n) };' +
+      '});');
+    ok('il pizzicato registrato suona', pizzCampione.picco > 0.05, 'picco ' + pizzCampione.picco);
+    ok('il pizzicato decade', pizzCampione.fine < pizzCampione.inizio * 0.4,
+      'inizio ' + pizzCampione.inizio.toFixed(4) + ' → fine ' + pizzCampione.fine.toFixed(4));
 
     console.log('\n' + '═'.repeat(68));
     console.log(problemi === 0
