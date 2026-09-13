@@ -130,6 +130,11 @@ if (!CHROME) {
   }
 
   let prove = 0, problemi = 0;
+  function ok(nome, condizione, dettaglio) {
+    prove++;
+    if (!condizione) problemi++;
+    console.log((condizione ? '  ok  ' : '  ✗   ') + nome.padEnd(46) + (dettaglio == null ? '' : dettaglio));
+  }
   function check(nome, valore, atteso) {
     prove++;
     const buono = JSON.stringify(valore) === JSON.stringify(atteso);
@@ -410,6 +415,14 @@ if (!CHROME) {
       'Sol,Re,La,Mi');
     check('una nota cadente per ogni nota del brano', await valuta(
       'return document.querySelectorAll(".eroe-nota").length;'), 30);
+    // le note devono davvero cadere: è il difetto che si vedeva come "non si muove nulla"
+    const pos1 = await valuta(
+      'return Array.from(document.querySelectorAll(".eroe-nota")).map(function(e){return e.style.transform;}).join("|");');
+    await attesa(500);
+    const pos2 = await valuta(
+      'return Array.from(document.querySelectorAll(".eroe-nota")).map(function(e){return e.style.transform;}).join("|");');
+    ok('le note cadono (le posizioni cambiano)', pos1 !== pos2 && pos2.indexOf('translateY') >= 0,
+      'prima ' + String(pos1).slice(0, 18) + '… poi ' + String(pos2).slice(0, 18) + '…');
     check('quattro pulsanti per suonare', await valuta('return document.querySelectorAll(".eroe-tasto").length;'), 4);
     check('il brano è indicato in alto', await valuta(
       'return document.querySelector(".eroe-pezzo").textContent.indexOf("Inno alla Gioia") >= 0;'), true);

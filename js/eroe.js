@@ -120,6 +120,7 @@ window.Eroe = (function () {
     if (this.stato === 'fine') return;
     const ora = performance.now() / 1000;
     this.ora = ora;
+    this.disegna();
 
     if (ora >= this._t0) this.stato = 'gioco';
 
@@ -137,8 +138,6 @@ window.Eroe = (function () {
       if (n.stato !== 'attesa') return;
       if (ora - n.tempo > FINESTRA_BUONO) self.registra(n, false, null);
     });
-
-    if (this.dom) this.disegna();
 
     if (this.note.every(function (n) { return n.stato !== 'attesa'; })) {
       this.fine();
@@ -326,13 +325,14 @@ window.Eroe = (function () {
       };
       b.addEventListener('pointerdown', premi);
     });
+    gioco.dom = contenitore;
     return gioco;
   }
 
   /** Aggiorna le posizioni: chiamata a ogni fotogramma. */
   Gioco.prototype.disegna = function () {
     const pista = this._pista;
-    if (!pista) return;
+    if (!pista) return;   // nessun disegno (per esempio nei test senza DOM)
     const altezza = pista.clientHeight;
     const linea = altezza - 74;                 // la linea di battuta, dal basso
     const ora = this.ora;
