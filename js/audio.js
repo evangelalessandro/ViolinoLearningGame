@@ -309,17 +309,17 @@ window.Sound = (function () {
      il playbackRate si calcola da lì, così la nota esce esattamente intonata
      anche se il campione originale è un po' calante o crescente. */
   const CAMPIONI = [
-    { nota: 'G3', file: 'sounds/arco-G3.wav', hz: 195.56 },
-    { nota: 'A3', file: 'sounds/arco-A3.wav', hz: 220.20 },
-    { nota: 'C4', file: 'sounds/arco-C4.wav', hz: 265.16 },
-    { nota: 'E4', file: 'sounds/arco-E4.wav', hz: 330.64 },
-    { nota: 'G4', file: 'sounds/arco-G4.wav', hz: 393.52 },
-    { nota: 'A4', file: 'sounds/arco-A4.wav', hz: 440.40 },
-    { nota: 'C5', file: 'sounds/arco-C5.wav', hz: 522.82 },
-    { nota: 'E5', file: 'sounds/arco-E5.wav', hz: 661.08 },
-    { nota: 'G5', file: 'sounds/arco-G5.wav', hz: 780.83 },
-    { nota: 'A5', file: 'sounds/arco-A5.wav', hz: 877.80 },
-    { nota: 'C6', file: 'sounds/arco-C6.wav', hz: 1040.44 }
+    { nota: 'G3', file: 'sounds/arco-G3.wav', hz: 195.86 },
+    { nota: 'A3', file: 'sounds/arco-A3.wav', hz: 219.90 },
+    { nota: 'C4', file: 'sounds/arco-C4.wav', hz: 261.86 },
+    { nota: 'E4', file: 'sounds/arco-E4.wav', hz: 330.34 },
+    { nota: 'G4', file: 'sounds/arco-G4.wav', hz: 392.52 },
+    { nota: 'A4', file: 'sounds/arco-A4.wav', hz: 443.00 },
+    { nota: 'C5', file: 'sounds/arco-C5.wav', hz: 524.82 },
+    { nota: 'E5', file: 'sounds/arco-E5.wav', hz: 657.68 },
+    { nota: 'G5', file: 'sounds/arco-G5.wav', hz: 786.53 },
+    { nota: 'A5', file: 'sounds/arco-A5.wav', hz: 877.30 },
+    { nota: 'C6', file: 'sounds/arco-C6.wav', hz: 1034.44 }
   ];
   const CAMPIONE_PIZZ = { nota: 'A4', file: 'sounds/pizz-A4.wav', hz: 439.40 };
 
@@ -402,12 +402,15 @@ window.Sound = (function () {
 
     const g = c.createGain();
     const durata = s.buffer.duration / rate;      // durata del campione alla nuova altezza
-    const tenuta = Math.max(0.1, Math.min(dur, durata - 0.35));
+    const tenuta = Math.max(0.1, Math.min(dur, durata - 0.45));
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.linearRampToValueAtTime(picco, t0 + 0.012);
-    if (tenuta < durata - 0.2) {                  // se serve più corta, si chiude prima
+    // attacco quasi immediato: l'attacco dell'archetto è già dentro la
+    // registrazione, qui serve solo a non far scattare il campione
+    g.gain.linearRampToValueAtTime(picco, t0 + 0.006);
+    if (tenuta < durata - 0.3) {                  // se serve più corta, si chiude prima
       g.gain.setValueAtTime(picco, t0 + tenuta);
-      g.gain.setTargetAtTime(0.0001, t0 + tenuta, pizz ? 0.05 : 0.12);
+      // rilascio morbido: l'archetto si stacca, non si tronca la nota
+      g.gain.setTargetAtTime(0.0001, t0 + tenuta, pizz ? 0.05 : 0.25);
     }
     src.connect(g).connect(opt.destinazione);
     src.start(t0);
@@ -523,11 +526,11 @@ window.Sound = (function () {
   function accorda(stringId) {
     const s = T.stringOf(stringId);
     if (!s) return;
-    playMidi(T.midi(s.open), 2.1, { gain: 1 });
+    playMidi(T.midi(s.open), 2.6, { gain: 1 });
   }
   function accordaturaCompleta() {
     T.STRINGS.slice().reverse().forEach(function (s, i) {  // Mi, La, Re, Sol
-      playMidi(T.midi(s.open), 1.7, { delay: i * 0.55, gain: 0.9 });
+      playMidi(T.midi(s.open), 2.2, { delay: i * 0.6, gain: 0.9 });
     });
   }
 

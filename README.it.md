@@ -139,8 +139,9 @@ Le note che senti sono **registrazioni reali di violino**, non un tono sintetico
 
 * **Campioni** — le registrazioni di *Solo Violin* di **VSCO 2 Community Edition**, rilasciate
   con licenza **CC0 1.0 Universal** (dominio pubblico). Undici note ad arco con vibrato vero
-  dal Sol3 al Do6, più un pizzicato per i suoni dell'interfaccia. Stanno in `sounds/`, sono
-  WAV mono a 22 050 Hz e pesano circa 1 MB in tutto. Provenienza e lavorazione sono
+  dal Sol3 al Do6 — 3,5 s ciascuna, attacco d'archetto naturale incluso — più un pizzicato per
+  i suoni dell'interfaccia. Stanno in `sounds/`, sono WAV mono a 22 050 Hz e pesano circa
+  1,7 MB in tutto. Provenienza e lavorazione sono
   documentate in [`sounds/LICENSE.md`](sounds/LICENSE.md) e lo script di preparazione è
   [`tools/prepara-campioni.js`](tools/prepara-campioni.js).
 * **Intonazione** — l'altezza reale di ogni registrazione è stata misurata con
@@ -148,7 +149,9 @@ Le note che senti sono **registrazioni reali di violino**, non un tono sintetico
   riproduzione viene trasposta esattamente sulla nota richiesta. Una delle note originali è
   23 cent crescente: senza questa correzione suonerebbe scordata.
 * **Riproduzione** — ogni nota usa il campione più vicino, trasposto al massimo di due
-  semitoni, attraverso un limitatore morbido e un breve riverbero.
+  semitoni, tenuto per tutta la durata della nota (i campioni sono abbastanza lunghi da non
+  troncarla mai) e rilasciato come un archetto che si stacca, attraverso un limitatore
+  morbido e un breve riverbero.
 * **Ripiego** — se il browser non riesce a leggere i file dei campioni (succede aprendo
   `index.html` direttamente da `file://`, perché la lettura dei file locali è bloccata), l'app
   sintetizza il violino: spettro della corda sfregata `(1/n)·|sin(n·π·β)|`, risonanze della

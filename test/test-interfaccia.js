@@ -11,6 +11,26 @@
    ========================================================================== */
 'use strict';
 
+const http = require('http');
+
+/* Il fetch di Node (undici) può andare in assert se il server chiude la
+   connessione: per i test parlo direttamente con http.get. */
+function scarica(url) {
+  return new Promise(function (res, rej) {
+    const u = new URL(url);
+    const req = http.get({
+      hostname: u.hostname, port: u.port, path: u.pathname + u.search, timeout: 8000
+    }, function (r) {
+      let d = '';
+      r.setEncoding('utf8');
+      r.on('data', function (c) { d += c; });
+      r.on('end', function () { res({ ok: r.statusCode >= 200 && r.statusCode < 300, status: r.statusCode, testo: d }); });
+    });
+    req.on('error', rej);
+    req.on('timeout', function () { req.destroy(new Error('timeout')); });
+  });
+}
+
 const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
@@ -50,7 +70,7 @@ if (!CHROME) {
 /* ------------------------------------------------------------ verifica HTTP */
 (async function () {
   try {
-    const r = await fetch(URL_APP);
+    const r = await scarica(URL_APP);
     if (!r.ok) throw new Error('HTTP ' + r.status);
   } catch (e) {
     console.log('⚠  App non raggiungibile su ' + URL_APP);
@@ -122,7 +142,7 @@ if (!CHROME) {
     let wsUrl = null;
     for (let i = 0; i < 60 && !wsUrl; i++) {
       try {
-        const j = await (await fetch('http://127.0.0.1:' + PORTA + '/json/list')).json();
+        const j = JSON.parse((await scarica('http://127.0.0.1:' + PORTA + '/json/list')).testo);
         const p = j.filter(function (t) { return t.type === 'page'; })[0];
         if (p) wsUrl = p.webSocketDebuggerUrl;
       } catch (e) { /* Chrome non ancora pronto */ }

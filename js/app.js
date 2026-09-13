@@ -278,7 +278,7 @@
       onPick: function (slot) {
         App.notaStudio = slot.note;
         mostraNotaStudio(slot);
-        if (typeof Sound !== 'undefined') Sound.playMidi(slot.midi, 1.4);
+        if (typeof Sound !== 'undefined') Sound.playMidi(slot.midi, 1.8);
       },
       highlight: null
     };
@@ -295,7 +295,7 @@
       });
     });
     el('btn-ripeti').addEventListener('click', function () {
-      if (typeof Sound !== 'undefined') Sound.playNote(App.notaStudio, 1.4);
+      if (typeof Sound !== 'undefined') Sound.playNote(App.notaStudio, 1.8);
     });
     el('btn-accorda').addEventListener('click', function () {
       if (typeof Sound !== 'undefined') Sound.accordaturaCompleta();
@@ -345,7 +345,7 @@
         const m = parseInt(b.getAttribute('data-midi'), 10);
         App.notaStudio = T.fromMidi(m, App.opt.preferFlats);
         mostraNotaStudio(null);
-        if (typeof Sound !== 'undefined') Sound.playMidi(m, 1.4);
+        if (typeof Sound !== 'undefined') Sound.playMidi(m, 1.8);
       });
     });
   }

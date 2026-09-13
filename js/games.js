@@ -250,7 +250,7 @@ window.Gioco = (function () {
     const dom = q || this.domandaDi(0);
     if (!dom) return;
     if (typeof Sound !== 'undefined' && Sound.playNote) {
-      Sound.playNote(dom.nota, 1.3);
+      Sound.playNote(dom.nota, 1.8);
     }
   };
 

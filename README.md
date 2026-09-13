@@ -137,8 +137,9 @@ The notes you hear are **real violin recordings**, not a synthetic tone.
 
 * **Samples** — the *Solo Violin* recordings from **VSCO 2 Community Edition**, released
   under **CC0 1.0 Universal** (public domain). Eleven bowed notes with real vibrato covering
-  G3–C6, plus a pizzicato used for the interface sounds. They live in `sounds/`, are mono
-  22 050 Hz WAV, and weigh about 1 MB in total. Provenance and processing are documented in
+  G3–C6 — 3.5 s each, natural bow attack included — plus a pizzicato used for the
+  interface sounds. They live in `sounds/`, are mono 22 050 Hz WAV, and weigh about 1.7 MB
+  in total. Provenance and processing are documented in
   [`sounds/LICENSE.md`](sounds/LICENSE.md) and the preparation script is
   [`tools/prepara-campioni.js`](tools/prepara-campioni.js).
 * **Tuning** — the real pitch of every recording was measured with
@@ -146,7 +147,8 @@ The notes you hear are **real violin recordings**, not a synthetic tone.
   playback is transposed exactly onto the requested note. One of the original notes is
   23 cents sharp: without this correction it would sound out of tune.
 * **Playback** — each note uses the nearest sample, transposed by at most two semitones,
-  through a soft limiter and a short convolution reverb.
+  held for as long as the note lasts (the samples are long enough that nothing is cut
+  short) and released like a bow being lifted, through a soft limiter and a short reverb.
 * **Fallback** — if the browser refuses to read the sample files (which happens when
   `index.html` is opened directly from `file://`, because local file reads are blocked), the
   app synthesises the violin instead: bowed-string spectrum `(1/n)·|sin(n·π·β)|`, body

@@ -8,7 +8,7 @@ dedication). The full licence text is in [`LICENSE-CC0.txt`](LICENSE-CC0.txt).
 |---|---|
 | **Library** | VSCO 2 Community Edition (Versilian Studios LLC) |
 | **Source** | <https://github.com/sgossner/VSCO-2-CE> |
-| **Original files** | `Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_<note>_p.wav`<br>`Strings/Solo Violin/Pizz/LLVln_Pizz_A4_p_RR1.wav` |
+| **Original files** | `Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_<note>_f.wav`<br>`Strings/Solo Violin/Pizz/LLVln_Pizz_A4_f_RR1.wav` |
 | **Licence** | CC0 1.0 Universal — <https://creativecommons.org/publicdomain/zero/1.0/> |
 | **Files here** | `arco-G3.wav`, `arco-A3.wav`, `arco-C4.wav`, `arco-E4.wav`, `arco-G4.wav`, `arco-A4.wav`, `arco-C5.wav`, `arco-E5.wav`, `arco-G5.wav`, `arco-A5.wav`, `arco-C6.wav`, `pizz-A4.wav` |
 
@@ -21,12 +21,16 @@ because it is right to do so, not because the licence demands it.
 The processing is done by [`tools/prepara-campioni.js`](../tools/prepara-campioni.js) and can
 be re-run at any time (`node tools/prepara-campioni.js`):
 
-* an excerpt is taken from each recording — 2.0 s starting 0.06 s in for the bowed notes,
-  1.1 s from the start for the pizzicato
+* an excerpt is taken from each recording — 3.5 s **from the very beginning** for the bowed
+  notes, so the natural bow attack is kept (the first 20 ms are almost silent, then the level
+  rises over about 0.15 s: that is what makes the sound bowed rather than plucked), and 1.1 s
+  from the start for the pizzicato
 * stereo mixed down to mono
 * resampled from 44 100 Hz to 22 050 Hz using a windowed-sinc anti-aliasing filter
 * peak-normalised to 0.9, with a short fade-in and fade-out
 * written as 16-bit PCM WAV
+
+The bowed notes use the *forte* dynamic layer, whose level is steady after the attack; the softer *piano* layer swells for almost three seconds and sounded hesitant and then cut short.
 
 The measured pitch of every prepared file is in
 [`tools/misura-campioni.js`](../tools/misura-campioni.js); those numbers are stored in

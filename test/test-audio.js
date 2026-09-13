@@ -14,6 +14,26 @@
    ========================================================================== */
 'use strict';
 
+const http = require('http');
+
+/* Il fetch di Node (undici) può andare in assert se il server chiude la
+   connessione: per i test parlo direttamente con http.get. */
+function scarica(url) {
+  return new Promise(function (res, rej) {
+    const u = new URL(url);
+    const req = http.get({
+      hostname: u.hostname, port: u.port, path: u.pathname + u.search, timeout: 8000
+    }, function (r) {
+      let d = '';
+      r.setEncoding('utf8');
+      r.on('data', function (c) { d += c; });
+      r.on('end', function () { res({ ok: r.statusCode >= 200 && r.statusCode < 300, status: r.statusCode, testo: d }); });
+    });
+    req.on('error', rej);
+    req.on('timeout', function () { req.destroy(new Error('timeout')); });
+  });
+}
+
 const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
@@ -177,7 +197,7 @@ function sezione(t) { console.log('\n── ' + t + ' ' + '─'.repeat(Math.max(
 
 (async function () {
   try {
-    const r = await fetch(URL_APP);
+    const r = await scarica(URL_APP);
     if (!r.ok) throw new Error('HTTP ' + r.status);
   } catch (e) {
     console.log('⚠  App non raggiungibile su ' + URL_APP);
@@ -196,7 +216,7 @@ function sezione(t) { console.log('\n── ' + t + ' ' + '─'.repeat(Math.max(
     let wsUrl = null;
     for (let i = 0; i < 60 && !wsUrl; i++) {
       try {
-        const j = await (await fetch('http://127.0.0.1:' + PORTA + '/json/list')).json();
+        const j = JSON.parse((await scarica('http://127.0.0.1:' + PORTA + '/json/list')).testo);
         const p = j.filter(function (t) { return t.type === 'page'; })[0];
         if (p) wsUrl = p.webSocketDebuggerUrl;
       } catch (e) { /* Chrome non ancora pronto */ }
@@ -391,6 +411,26 @@ function sezione(t) { console.log('\n── ' + t + ' ' + '─'.repeat(Math.max(
     ok('il pizzicato registrato suona', pizzCampione.picco > 0.05, 'picco ' + pizzCampione.picco);
     ok('il pizzicato decade', pizzCampione.fine < pizzCampione.inizio * 0.4,
       'inizio ' + pizzCampione.inizio.toFixed(4) + ' → fine ' + pizzCampione.fine.toFixed(4));
+
+    /* Il campione dev'essere lungo: una nota di 2,4 s deve suonare per tutta la
+       sua durata invece di essere troncata (era il difetto dei campioni da 2 s). */
+    const sostegno = await valuta(
+      'return Sound.rendiCampioneOffline(69, 2.4, {}).then(function (buf) {' +
+      '  var d = buf.getChannelData(0), rate = buf.sampleRate;' +
+      '  function rms(a, b) { var s = 0, n = 0;' +
+      '    for (var i = Math.floor(a*rate); i < Math.floor(b*rate); i++) { s += d[i]*d[i]; n++; }' +
+      '    return Math.sqrt(s/n); }' +
+      '  return { attacco: +rms(0.02, 0.12).toFixed(4), meta: +rms(0.9, 1.2).toFixed(4),' +
+      '           tardi: +rms(1.9, 2.3).toFixed(4) };' +
+      '});');
+    if (sostegno.__errore) throw new Error('sostegno: ' + sostegno.__errore);
+    ok('la nota suona ancora dopo 2 secondi', sostegno.tardi > 0.05,
+      'rms a 1,9-2,3 s = ' + sostegno.tardi);
+    ok('il livello resta stabile (non è un pizzicato)', sostegno.tardi > sostegno.meta * 0.7,
+      'a 0,9 s ' + sostegno.meta + ' → a 2,1 s ' + sostegno.tardi);
+    ok('dopo l\'attacco il suono non crolla (non è un pizzicato)',
+      sostegno.meta > sostegno.attacco * 0.6,
+      'attacco ' + sostegno.attacco + ' → corpo ' + sostegno.meta);
 
     console.log('\n' + '═'.repeat(68));
     console.log(problemi === 0

@@ -30,9 +30,13 @@ const PIZZ = ['A4'];
 const RATE_OUT = 22050;
 const PICCO = 0.9;
 
-/* Parametri per i due tipi di campione: l'arco ha un attacco lungo e un suono
-   sostenuto, il pizzicato è corto e l'attacco È il suono. */
-const ARCO_OPZ = { inizio: 0.06, durata: 2.0, fadeIn: 0.015, fadeOut: 0.3 };
+/* Parametri per i due tipi di campione.
+   Arco: si tiene l'ATTACCO naturale (i primi 20 ms sono quasi silenzio, poi il
+   livello sale in circa 0,15 s: è quello che fa sembrare il suono "ad arco" e
+   non "pizzicato") e si prende un estratto lungo dal corpo stabile della nota,
+   così la nota può durare quanto serve senza essere tagliata.
+   Pizzicato: corto, l'attacco È il suono. */
+const ARCO_OPZ = { inizio: 0.0, durata: 3.5, fadeIn: 0.005, fadeOut: 0.6 };
 const PIZZ_OPZ = { inizio: 0.0, durata: 1.1, fadeIn: 0.001, fadeOut: 0.25 };
 
 /* ------------------------------------------------------------------ WAV --- */
@@ -207,9 +211,9 @@ async function prepara(remoto, locale, opz) {
 (async function () {
   fs.mkdirSync(DEST, { recursive: true });
   const lavori = ARCO.map(function (n) {
-    return { remoto: 'Arco Vib/LLVln_ArcoVib_' + n + '_p.wav', locale: 'arco-' + n, opz: ARCO_OPZ };
+    return { remoto: 'Arco Vib/LLVln_ArcoVib_' + n + '_f.wav', locale: 'arco-' + n, opz: ARCO_OPZ };
   }).concat(PIZZ.map(function (n) {
-    return { remoto: 'Pizz/LLVln_Pizz_' + n + '_p_RR1.wav', locale: 'pizz-' + n, opz: PIZZ_OPZ };
+    return { remoto: 'Pizz/LLVln_Pizz_' + n + '_f_RR1.wav', locale: 'pizz-' + n, opz: PIZZ_OPZ };
   }));
 
   console.log('Campioni VSCO 2 CE (CC0) → ' + DEST + '\n');
