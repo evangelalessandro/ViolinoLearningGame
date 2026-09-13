@@ -214,6 +214,8 @@ function sezione(t) { console.log('\n── ' + t + ' ' + '─'.repeat(Math.max(
     };
     await invia('Runtime.enable');
     await invia('Page.enable');
+    await invia('Network.enable');
+    await invia('Network.setCacheDisabled', { cacheDisabled: true });
     await invia('Page.navigate', { url: URL_APP });
     await attesa(1200);
 

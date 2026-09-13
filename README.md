@@ -43,6 +43,35 @@ Personal bests are stored in the browser's `localStorage`: no data ever leaves y
 | ⚔️ **Turn-based duel** | 2 players, one timed turn each: the highest score wins |
 | 👥 **Side-by-side challenge** | 2 players **at the same time**, split screen, each with their own notes |
 | 🏁 **Head to head** | One note for both: whoever answers first wins the point |
+| 🎼 **Classical pieces** | Choose a famous piece and name its notes one by one from the staff |
+| 🎸 **Violin Hero** | The notes of the piece fall down: hit the right string in time |
+
+### 🎼 Classical pieces
+
+Pick from the built-in library (`js/brani.js`, all public-domain melodies, all playable in
+1st position from G3 to C6):
+
+| Piece | |
+|---|---|
+| Inno alla Gioia / Ode to Joy | Ludwig van Beethoven |
+| Per Elisa / Für Elise (opening) | Ludwig van Beethoven |
+| Canone di Pachelbel / Pachelbel's Canon (theme) | Johann Pachelbel |
+| Fra Martino / Frère Jacques | traditional |
+| Brillante stella / Twinkle, Twinkle, Little Star | traditional |
+| Jingle Bells | James Lord Pierpont |
+| Scala e arpeggio di Do / C major scale and arpeggio | exercise |
+
+You can **listen to the whole piece first** (with its rhythm); then the app shows its notes one
+by one on the staff: name each one, hear it played, and watch the melody build up note by note
+at the top of the screen. Wrong notes go into the mistakes review like everywhere else.
+
+### 🎸 Violin Hero
+
+The notes of the chosen piece fall towards a line, each in the lane of the string where it is
+actually played (G, D, A, E). Hit the right lane in time — tap the four buttons or press keys
+`1` `2` `3` `4` — and the app plays that note, so playing well builds the melody you hear.
+Four beats of count-in, then it starts; perfect timing is worth double, missing a note breaks
+the streak, and a stray tap costs nothing.
 
 ### 📋 Mistakes review
 
@@ -161,7 +190,9 @@ js/theory.js          notes, frequencies, strings, fingerings, positions, levels
 js/audio.js           violin sound synthesis (Web Audio), effects, tuning
 js/staff.js           treble staff drawing (SVG)
 js/violin.js          interactive violin fingerboard (SVG)
+js/brani.js           public-domain pieces for the two music games
 js/games.js           game engine: questions, scoring, timing, turns (no DOM)
+js/eroe.js            Violin Hero engine: falling notes, timing and scoring
 js/app.js             interface, screens, wiring with the engine
 sounds/               recorded violin samples (VSCO 2 CE, CC0) + licence
 tools/                sample preparation and tuning measurement scripts

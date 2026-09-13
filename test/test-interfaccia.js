@@ -140,6 +140,8 @@ if (!CHROME) {
     };
     await invia('Runtime.enable');
     await invia('Page.enable');
+    await invia('Network.enable');
+    await invia('Network.setCacheDisabled', { cacheDisabled: true });
     await invia('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
     await invia('Page.addScriptToEvaluateOnNewDocument', {
       source: 'window.__errori=[];window.addEventListener("error",function(e){window.__errori.push((e.error&&e.error.stack)||e.message);});' +
@@ -350,6 +352,63 @@ if (!CHROME) {
     check('campioni previsti', await valuta('return Sound.CAMPIONI.length;'), 11);
     check('i file audio sono raggiungibili', await valuta(
       'return fetch("sounds/arco-A4.wav").then(function (r) { return r.ok; });'), true);
+
+    console.log('── Brani classici ' + '─'.repeat(45));
+    await invia('Page.navigate', { url: URL_APP });
+    await attesa(1100);
+    check('dieci giochi in home', await valuta('return document.querySelectorAll(".modo").length;'), 10);
+    await clickVero('[data-modo="brano"]');
+    await attesa(500);
+    check('si sceglie il brano', await valuta('return document.querySelectorAll(".brano-riga").length;'), 7);
+    check('i brani hanno titolo e autore', await valuta(
+      'var b=document.querySelector(".brano-riga"); return b.querySelector(".brano-info b").textContent.length > 3 &&' +
+      ' b.querySelector(".brano-info small").textContent.length > 3;'), true);
+    await clickVero('[data-scegli="martino"]');
+    await attesa(700);
+    check('parte il brano scelto', await valuta('return App.sessione.brano.chiave;'), 'martino');
+    check('il titolo del brano è in alto', await valuta(
+      'return document.querySelector(".brano-nome").textContent.indexOf("Fra Martino") >= 0;'), true);
+    check('le note sono in ordine (Do, Re, Mi)', await valuta(
+      'var s=App.sessione; return [1,2,3].map(function(i){ s.indice=i-1; return Theory.solfege(s.creaDomanda().nota); }).join(",");'),
+      'Do,Re,Mi');
+    check('il totale è quello del brano', await valuta('return App.sessione.totale;'), 32);
+    const primaNota = await valuta('return Theory.solfege(App.sessione.domanda.nota);');
+    await clickVero('#screen-play .opzioni .opt:nth-child(1)');
+    await attesa(500);
+    check('si risponde e si avanza', await valuta('return App.sessione.storico.length;'), 1);
+    await clickVero('#btn-esci');
+    await attesa(400);
+
+    console.log('── Violin Hero ' + '─'.repeat(49));
+    await clickVero('[data-modo="eroe"]');
+    await attesa(500);
+    await clickVero('[data-scegli="gioia"]');
+    await attesa(800);
+    check('quattro corsie, una per corda', await valuta('return document.querySelectorAll(".eroe-corsia").length;'), 4);
+    check('le corde sono Sol Re La Mi', await valuta(
+      'return Array.from(document.querySelectorAll(".eroe-corda-nome")).map(function(e){return e.textContent;}).join(",");'),
+      'Sol,Re,La,Mi');
+    check('una nota cadente per ogni nota del brano', await valuta(
+      'return document.querySelectorAll(".eroe-nota").length;'), 30);
+    check('quattro pulsanti per suonare', await valuta('return document.querySelectorAll(".eroe-tasto").length;'), 4);
+    check('il brano è indicato in alto', await valuta(
+      'return document.querySelector(".eroe-pezzo").textContent.indexOf("Inno alla Gioia") >= 0;'), true);
+    check('ogni nota mostra il suo nome', await valuta(
+      'var n=document.querySelector(".eroe-nota-nome").textContent; return n.length > 1;'), true);
+    // si suona la prima nota esattamente quando arriva sulla linea
+    const colpita = await valuta(
+      'var g=App.eroe, n=g.note[0];' +
+      'var attesa = Math.max(0, (n.tempo - performance.now()/1000) * 1000);' +
+      'return new Promise(function(res){ setTimeout(function(){' +
+      '  var esito = g.premi(n.corda);' +
+      '  res(esito ? (esito.perfetto ? "perfetto" : "buono") : "nullo"); }, attesa); });');
+    check('una nota presa a tempo vale "perfetto"', colpita, 'perfetto');
+    check('il punteggio sale', await valuta('return App.eroe.punti > 0;'), true);
+    check('esiste il pulsante degli errori', await valuta('return !!document.getElementById("btn-errori");'), true);
+    await clickVero('#btn-esci');
+    await attesa(400);
+    check('si esce dal gioco Eroe', await valuta('return document.getElementById("screen-home").classList.contains("is-active");'), true);
+    check('nessun errore JavaScript', await valuta('return window.__errori || [];'), []);
 
     /* Nessuna scritta "undefined"/"NaN" dev'essere visibile: è il sintomo tipico
        di una proprietà scritta con un nome diverso da quello usato nell'interfaccia. */

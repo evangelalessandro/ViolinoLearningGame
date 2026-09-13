@@ -74,9 +74,25 @@ window.Gioco = (function () {
       descEn: 'The same note for both: whoever answers first wins the point.',
       aiuto: 'Chi sbaglia resta bloccato fino alla nota successiva.',
       aiutoEn: 'A wrong answer locks you out until the next note.'
+    },
+    brano: {
+      chiave: 'brano', nome: 'Brani classici', nomeEn: 'Classical pieces', icona: '🎼', tipo: 'brano', layout: 'solo',
+      giocatori: 1, grandi: true, brano: true,
+      desc: 'Scegli un brano famoso e indovina le sue note una per una sul pentagramma.',
+      descEn: 'Pick a famous piece and name its notes one by one from the staff.',
+      aiuto: 'Puoi ascoltare tutto il brano prima di cominciare: le note sono in ordine.',
+      aiutoEn: 'You can listen to the whole piece first: the notes come in order.'
+    },
+    eroe: {
+      chiave: 'eroe', nome: 'Violin Hero', nomeEn: 'Violin Hero', icona: '🎸', tipo: 'eroe', layout: 'eroe',
+      giocatori: 1, grandi: true, brano: true,
+      desc: 'Le note del brano cadono dall\'alto: tocca la corda giusta a tempo!',
+      descEn: 'The notes of the piece fall from the top: hit the right string in time!',
+      aiuto: 'Ogni corsia è una corda: Sol, Re, La, Mi. Tasti 1 2 3 4 oppure tocca i pulsanti.',
+      aiutoEn: 'Each lane is a string: G, D, A, E. Keys 1 2 3 4 or just tap the buttons.'
     }
   };
-  const ORDINE = ['leggi', 'trova', 'orecchio', 'tempo', 'tastiera', 'duello', 'contemporanea', 'testa'];
+  const ORDINE = ['leggi', 'trova', 'orecchio', 'tempo', 'tastiera', 'duello', 'contemporanea', 'testa', 'brano', 'eroe'];
 
   function nomeModo(m) { return (T.getLingua() === 'en' && m.nomeEn) ? m.nomeEn : m.nome; }
   function descModo(m) { return (T.getLingua() === 'en' && m.descEn) ? m.descEn : m.desc; }
@@ -121,6 +137,19 @@ window.Gioco = (function () {
     this.hooks = cfg.hooks || {};
     this.secondi = this.modo.secondi || 0;
     this.totale = this.modo.domande || 0;
+    // brano scelto (giochi "Brani classici" e "Violin Hero")
+    this.brano = null;
+    if (cfg.brano && typeof window !== 'undefined' && window.Brani) {
+      this.brano = window.Brani.perChiave(cfg.brano);
+    }
+    if (this.modo.tipo === 'brano') {
+      // se non è stato indicato un brano si usa il primo: così la partita
+      // ha comunque un inizio e una fine
+      if (!this.brano && typeof window !== 'undefined' && window.Brani) {
+        this.brano = window.Brani.BRANI[0];
+      }
+      if (this.brano) this.totale = this.brano.note.length;
+    }
     this.tempo = this.secondi;
     this.trascorso = 0;
     this.indice = 0;
@@ -161,9 +190,16 @@ window.Gioco = (function () {
 
   Sessione.prototype.creaDomanda = function () {
     const tipo = this.tipoDomanda();
-    const nota = this.estraiNota();
+    let nota;
+    if (tipo === 'brano' && this.brano && this.brano.note.length) {
+      // le note del brano, in ordine: si legge la musica come sta scritta
+      const i = Math.min(this.indice, this.brano.note.length - 1);
+      nota = T.daNome(this.brano.note[i][0]) || this.estraiNota();
+    } else {
+      nota = this.estraiNota();
+    }
     this.ultimaNota = nota;
-    const q = { tipo: tipo, nota: nota, opzioni: [], risposta: null };
+    const q = { tipo: tipo === 'brano' ? 'brano' : tipo, nota: nota, opzioni: [], risposta: null };
     if (tipo !== 'posizione') {
       // le opzioni hanno nomi tutti diversi: "Sol3" e "Sol4" si chiamano
       // entrambi "Sol" e non si potrebbero distinguere fra i pulsanti
@@ -589,8 +625,8 @@ window.Gioco = (function () {
   };
 
   const NOMI_TIPO = {
-    it: { nome: 'Leggi la nota', posizione: 'Trova la posizione', orecchio: 'Orecchio musicale' },
-    en: { nome: 'Read the note', posizione: 'Find the position', orecchio: 'Ear training' }
+    it: { nome: 'Leggi la nota', posizione: 'Trova la posizione', orecchio: 'Orecchio musicale', brano: 'Brani classici', eroe: 'Violin Hero' },
+    en: { nome: 'Read the note', posizione: 'Find the position', orecchio: 'Ear training', brano: 'Classical pieces', eroe: 'Violin Hero' }
   };
 
   /* Frasi delle spiegazioni, per lingua. */

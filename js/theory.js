@@ -153,6 +153,30 @@
     return note(letter, octave, m - naturalMidi);
   }
 
+  /**
+   * Da nome internazionale a nota del modello: "C4" → Do4, "F#4" → Fa♯4,
+   * "Bb3" → Si♭3. Accetta anche i nomi italiani completi ("Sol3", "Fa♯4").
+   */
+  function daNome(testo) {
+    const t = String(testo).trim();
+    let m = t.match(/^([A-Ga-g])([#♯b♭]?)(-?\d)$/);
+    if (m) {
+      const letter = m[1].toUpperCase();
+      const alter = (m[2] === '#' || m[2] === '\u266F') ? 1 : (m[2] === 'b' || m[2] === '\u266D') ? -1 : 0;
+      return note(letter, parseInt(m[3], 10), alter);
+    }
+    m = t.match(/^(Do|Re|Mi|Fa|Sol|La|Si)([#♯b♭]?)(-?\d)$/i);
+    if (m) {
+      const it = m[1].toLowerCase();
+      const letter = Object.keys(SOLFEGE).filter(function (k) {
+        return SOLFEGE[k].toLowerCase() === it;
+      })[0];
+      const alter = (m[2] === '#' || m[2] === '\u266F') ? 1 : (m[2] === 'b' || m[2] === '\u266D') ? -1 : 0;
+      return note(letter, parseInt(m[3], 10), alter);
+    }
+    return null;
+  }
+
   /* ---------------------------------------------------------------- violino */
   // Ordine visivo reale: guardando il proprio violino, da sinistra a destra
   // si vedono Sol, Re, La, Mi.
@@ -398,7 +422,7 @@
     setLingua: setLingua, getLingua: getLingua, dita: dita, ordinale: ordinale,
     posizioneTesto: posizioneTesto, nomeCorda: nomeCorda, etichettaCorda: etichettaCorda,
     nomeLivello: nomeLivello, descLivello: descLivello,
-    english: english, equals: equals, fromMidi: fromMidi,
+    english: english, equals: equals, fromMidi: fromMidi, daNome: daNome,
     stringOf: stringOf, advance: advance,
     placements: placements, allPlacements: allPlacements,
     placementsFor: placementsFor, placementsForMidi: placementsForMidi,

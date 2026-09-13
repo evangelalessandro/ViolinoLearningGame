@@ -11,8 +11,11 @@
 
 global.window = global;
 require('../js/theory.js');
+global.T = global.window.Theory;      // brani.js e violin.js usano T come globale
 require('../js/violin.js');
+require('../js/brani.js');
 require('../js/games.js');
+require('../js/eroe.js');
 
 const T = global.window.Theory;
 const V = global.window.Violin;
@@ -188,6 +191,8 @@ function simula(modo, lv, bravura) {
 
 const riepilogo = [];
 G.ORDINE.forEach(function (modo) {
+  // "Violin Hero" ha un motore suo (vedi la sezione 9), non è una Sessione
+  if (G.MODI[modo].layout === 'eroe') return;
   T.LEVEL_ORDER.forEach(function (lv) {
     const esito = simula(modo, lv, 0.75);
     riepilogo.push(esito);
@@ -317,6 +322,93 @@ titolo('8. Nomi delle note in inglese');
   T.setLingua('it');
   ok(T.solfege(T.note('F', 4, 1)) === 'Fa♯', 'ritorno all\'italiano');
   ok(G.nomeModo(G.MODI.leggi) === 'Leggi la nota', 'gioco di nuovo in italiano');
+})();
+
+/* ------------------------------------------------- 9. Violin Hero (eroe) */
+titolo('9. Violin Hero: caduta delle note e punteggi');
+(function () {
+  // il gioco usa requestAnimationFrame: qui lo pilotiamo a mano
+  let raf = null;
+  global.requestAnimationFrame = function (fn) { raf = fn; return 1; };
+  global.cancelAnimationFrame = function () { raf = null; };
+
+  const brano = window.Brani.perChiave('gioia');
+  const g = new window.Eroe.Gioco({ brano: brano, livello: 'ragazzi', velocita: 1 });
+  ok(g.note.length === brano.note.length, 'una nota cadente per ogni nota del brano');
+  ok(g.note.every(function (n) { return T.placementsFor(n.nota, 1).length > 0; }),
+    'tutte le note del brano sono suonabili in 1ª posizione');
+  ok(g.note.every(function (n) { return g.corsie.indexOf(n.corda) >= 0; }),
+    'ogni nota cade in una delle quattro corsie');
+  ok(g.note[0].corda === 'D', 'il Do4 del brano cade sulla corda Re (3º dito)');
+  ok(Math.abs(g.durata() - brano.note.reduce(function (s, n) { return s + n[1]; }, 0) * g.battito) < 0.001,
+    'durata coerente con i battiti del brano');
+
+  // avvio: 4 battiti di conteggio, poi le note
+  finto = 0;
+  g.avvia();
+  ok(g.stato === 'conteggio', 'parte con il conteggio');
+  finto = (window.Eroe.CADUTA) * 1000 + 10;   // ben oltre il conteggio
+  raf(); raf();
+  ok(g.stato === 'gioco', 'dopo il conteggio comincia il gioco');
+
+  // si preme la corda giusta a tempo per le prime tre note
+  let prese = 0;
+  for (let i = 0; i < 3; i++) {
+    const n = g.note[i];
+    finto = n.tempo * 1000;                    // esattamente a tempo
+    const esito = g.premi(n.corda);
+    if (esito && esito.perfetto) prese++;
+  }
+  ok(prese === 3, 'tre note prese al momento giusto (' + prese + ')');
+  ok(g.giusti === 3 && g.sbagli === 0, 'conteggio giuste/sbagliate');
+  ok(g.punti >= 300, 'punteggio pieno sulle note perfette: ' + g.punti);
+  ok(g.serie === 3 && g.serieMax === 3, 'serie aggiornata');
+
+  // una nota lasciata cadere viene registrata come errore
+  const saltata = g.note[3];
+  finto = (saltata.tempo + 0.5) * 1000;
+  raf();
+  ok(saltata.stato === 'mancata', 'la nota non suonata risulta mancata');
+  ok(g.sbagli === 1, 'conteggio delle mancate');
+  ok(g.serie === 0, 'la serie riparte da zero dopo un errore');
+
+  // un tocco a vuoto su una corda senza note vicine non toglie punti
+  const puntiPrima = g.punti;
+  finto = (g.note[4].tempo - 1.5) * 1000;
+  ok(g.premi(g.note[4].corda) === null, 'tocco a vuoto ignorato');
+  ok(g.punti === puntiPrima, 'il tocco a vuoto non cambia il punteggio');
+
+  // si finisce: si premono tutte le note rimaste a tempo
+  g.note.forEach(function (n) {
+    if (n.stato !== 'attesa') return;
+    finto = n.tempo * 1000;
+    g.premi(n.corda);
+  });
+  raf();
+  ok(g.stato === 'fine', 'la partita finisce quando le note sono esaurite');
+  const r = g.risultato || g.calcolaRisultato();
+  ok(r.giocatori[0].giusti + r.giocatori[0].sbagli === brano.note.length,
+    'tutte le note del brano sono state valutate');
+  ok(r.giocatori[0].precisione >= 80, 'precisione alta suonando bene: ' + r.giocatori[0].precisione + '%');
+  ok(r.brano && r.brano.chiave === 'gioia', 'il risultato ricorda il brano suonato');
+
+  // il riepilogo degli errori funziona anche per il gioco Eroe
+  const rip = G.riepilogaErrori(g);
+  ok(rip && rip.voci.length === g.sbagli, 'il riepilogo conta gli errori del gioco Eroe');
+  ok(rip.voci.every(function (v) { return v.spiegazione && v.spiegazione.length > 20; }),
+    'ogni errore ha una spiegazione');
+
+  // la pausa sposta in avanti le note, non le perde
+  const g2 = new window.Eroe.Gioco({ brano: brano, livello: 'ragazzi', velocita: 1 });
+  finto = 0; g2.avvia();
+  finto = 2000; raf();
+  const tempoPrima = g2.note[0].tempo;
+  g2.pausa();
+  finto = 7000;                                  // 5 secondi di pausa
+  g2.riprendi();
+  ok(Math.abs(g2.note[0].tempo - (tempoPrima + 5)) < 0.001,
+    'la pausa sposta le note in avanti di quanto è durata');
+  ok(g2.stato !== 'fine', 'la pausa non termina la partita');
 })();
 
 /* ------------------------------------------------------------------ esito */

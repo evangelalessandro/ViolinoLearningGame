@@ -44,6 +44,35 @@ I record personali vengono salvati nel `localStorage` del browser: non esce ness
 | ⚔️ **Duello a turni** | 2 giocatori, un turno a tempo ciascuno: vince chi fa più punti |
 | 👥 **Sfida contemporanea** | 2 giocatori **insieme**, schermo diviso, ognuno con le sue note |
 | 🏁 **Testa a testa** | Una nota per tutti: chi risponde per primo vince il punto |
+| 🎼 **Brani classici** | Scegli un brano famoso e indovina le sue note una per una sul pentagramma |
+| 🎸 **Violin Hero** | Le note del brano cadono: tocca la corda giusta a tempo |
+
+### 🎼 Brani classici
+
+Si sceglie dalla libreria inclusa (js/brani.js: melodie di pubblico dominio, tutte suonabili
+in 1ª posizione dal Sol3 al Do6):
+
+| Brano | |
+|---|---|
+| Inno alla Gioia | Ludwig van Beethoven |
+| Per Elisa (inizio) | Ludwig van Beethoven |
+| Canone di Pachelbel (tema) | Johann Pachelbel |
+| Fra Martino | canzone tradizionale |
+| Brillante stella | melodia tradizionale francese |
+| Jingle Bells | James Lord Pierpont |
+| Scala e arpeggio di Do | esercizio |
+
+Si può **ascoltare tutto il brano** prima di cominciare (con il suo ritmo); poi l'app mostra le
+sue note una per una sul pentagramma: dai il nome, la senti suonare e vedi la melodia crescere
+nota dopo nota in alto nello schermo. Gli errori finiscono nel riepilogo come negli altri giochi.
+
+### 🎸 Violin Hero
+
+Le note del brano scelto cadono verso una linea, ognuna nella corsia della corda su cui si
+suona davvero (Sol, Re, La, Mi). Colpisci la corsia giusta a tempo — tocca i quattro pulsanti
+o premi i tasti 1 2 3 4 — e l'app suona quella nota: suonando bene senti la melodia che
+si costruisce. Quattro battiti di conteggio e si parte; il tempo perfetto vale doppio, una nota
+mancata interrompe la serie, un tocco a vuoto non costa nulla.
 
 ### 📋 Riepilogo degli errori
 
@@ -165,7 +194,9 @@ js/theory.js          note, frequenze, corde, diteggiature, posizioni, livelli
 js/audio.js           sintesi del violino (Web Audio), effetti, accordatura
 js/staff.js           disegno del pentagramma in chiave di violino (SVG)
 js/violin.js          manico del violino interattivo (SVG)
+js/brani.js           brani di pubblico dominio per i due giochi musicali
 js/games.js           motore di gioco: domande, punteggi, tempi, turni (nessun DOM)
+js/eroe.js            motore di Violin Hero: note che cadono, tempi e punteggi
 js/app.js             interfaccia, schermate, collegamento con il motore
 sounds/               campioni di violino registrati (VSCO 2 CE, CC0) + licenza
 tools/                script di preparazione dei campioni e di misura dell'intonazione

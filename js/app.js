@@ -351,11 +351,74 @@
   }
 
   /* =============================================================== PLAY === */
+  /** Il gioco in corso: una Sessione (quiz) oppure un gioco Eroe. */
+  function giocoCorrente() { return App.sessione || App.eroe; }
+  function finito(s) { return !!s && (s.fase === 'fine' || s.stato === 'fine'); }
+
   function avviaModo(chiave) {
     const modo = Gioco.MODI[chiave];
     if (!modo) return;
+    // i giochi sui brani chiedono prima quale brano
+    if (modo.brano) return apriSceltaBrano(chiave);
     if (modo.giocatori > 1) return apriSetup(chiave);
     partePartita(chiave, {});
+  }
+
+  /** Fa ascoltare tutto il brano, con il suo ritmo. */
+  function ascoltaBrano(b) {
+    if (typeof Sound === 'undefined' || !b) return;
+    Sound.stopAll();
+    const battito = 60 / b.bpm;
+    let t = 0;
+    b.note.forEach(function (n) {
+      const nota = T.daNome(n[0]);
+      if (!nota) return;
+      Sound.playMidi(T.midi(nota), Math.max(0.35, n[1] * battito * 0.92), { delay: t, gain: 0.9 });
+      t += n[1] * battito;
+    });
+  }
+
+  /** Finestra di scelta del brano, con anteprima. */
+  function apriSceltaBrano(chiave) {
+    const modo = Gioco.MODI[chiave];
+    const ov = el('overlay');
+    ov.hidden = false;
+    ov.className = 'overlay';
+    ov.innerHTML =
+      '<div class="modal brani">' +
+      '<h2>' + modo.icona + ' ' + Gioco.nomeModo(modo) + '</h2>' +
+      '<p class="mini">' + Gioco.descModo(modo) + '</p>' +
+      '<div class="brani-lista">' + Brani.BRANI.map(function (b) {
+        return '<div class="brano-riga">' +
+          '<div class="brano-info"><b>' + esc(Brani.titolo(b)) + '</b>' +
+          '<small>' + esc(Brani.autore(b)) + ' · ' + t('brani.note', { n: b.note.length }) +
+          ' · ' + (b.difficolta > 1 ? t('brani.difficolta2') : t('brani.difficolta')) + '</small></div>' +
+          '<button class="btn piccolo" data-ascolta="' + b.chiave + '" title="' + t('brani.ascolta') + '">🎧</button>' +
+          '<button class="btn piccolo primario" data-scegli="' + b.chiave + '">' + t('brani.gioca') + '</button>' +
+          '</div>';
+      }).join('') + '</div>' +
+      '<div class="modal-azioni"><button class="btn ghost" id="brani-annulla">' +
+      t('setup.annulla') + '</button></div></div>';
+
+    ov.querySelectorAll('[data-ascolta]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        ascoltaBrano(Brani.perChiave(b.getAttribute('data-ascolta')));
+      });
+    });
+    ov.querySelectorAll('[data-scegli]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const scelto = b.getAttribute('data-scegli');
+        if (typeof Sound !== 'undefined') Sound.stopAll();
+        ov.hidden = true;
+        ov.innerHTML = '';
+        partePartita(chiave, { brano: scelto });
+      });
+    });
+    el('brani-annulla').addEventListener('click', function () {
+      if (typeof Sound !== 'undefined') Sound.stopAll();
+      ov.hidden = true;
+      ov.innerHTML = '';
+    });
   }
 
   function apriSetup(chiave) {
@@ -399,6 +462,37 @@
 
   function partePartita(chiave, extra) {
     const modo = Gioco.MODI[chiave];
+
+    // "Violin Hero" ha un motore suo: le note cadono e si suonano a tempo
+    if (modo.layout === 'eroe') {
+      mostraSchermata('play');
+      el('level-picker').classList.add('is-hidden');
+      el('screen-play').innerHTML =
+        '<div class="eroe-wrap">' +
+        '<div class="eroe" id="eroe"></div>' +
+        '<div class="piede" id="eroe-piede"></div>' +
+        '</div>';
+      App.eroe = Eroe.avvia(el('eroe'), {
+        brano: Brani.perChiave(extra.brano) || Brani.BRANI[0],
+        modo: modo,
+        livello: App.opt.livello,
+        nomi: App.opt.nomi,
+        hooks: {
+          onChange: function (g, evento) {
+            if (evento === 'fine') mostraRisultati(g);
+            else if (evento === 'nota') aggiornaPulsanteErrori(g);
+          }
+        }
+      });
+      el('eroe-piede').innerHTML =
+        '<button class="btn ghost" id="btn-esci">' + t('gioco.esci') + '</button>' +
+        pulsanteErrori(App.eroe) +
+        '<span class="mini">' + esc(Gioco.aiutoModo(modo)) + '</span>';
+      el('btn-esci').addEventListener('click', function () { esci(); });
+      agganciaPulsanteErrori(el('eroe-piede'));
+      return;
+    }
+
     const bisognoConteggio = !!modo.secondi;
     const inizia = function () {
       App.sessione = new Gioco.Sessione({
@@ -408,6 +502,7 @@
         numOpzioni: App.opt.numOpzioni,
         nomi: extra.nomi || App.opt.nomi,
         secondi: extra.secondi,
+        brano: extra.brano,
         hooks: {
           onChange: function (s, evento) { onCambio(s, evento); }
         }
@@ -544,7 +639,22 @@
         (rivela ? '<div class="staff-wrap piccolo">' + Staff.build({ notes: [q.nota] }) + '</div>' : '') +
         '</div>';
     } else {
-      palco = '<div class="staff-wrap">' + Staff.build({ notes: [q.nota] }) + '</div>';
+      // pentagramma: da solo, oppure con l'intestazione del brano in lavorazione
+      if (q.tipo === 'brano' && s.brano) {
+        const fatte = s.storico || [];
+        palco = '<div class="card brano-testa">' +
+          '<div class="brano-nome">' + esc(Brani.titolo(s.brano)) +
+          ' <small>' + esc(Brani.autore(s.brano)) + '</small></div>' +
+          '<div class="brano-riga-note">' + fatte.map(function (v, i) {
+            const cls = v.corretto ? 'ok' : 'ko';
+            return '<span class="brano-nota ' + cls + (i === fatte.length - 1 ? ' attuale' : '') + '">' +
+              T.solfege(v.nota) + '</span>';
+          }).join('') + '</div>' +
+          '<button class="btn piccolo" id="btn-sentibrano">🎧 ' + t('brani.ascolta') + '</button>' +
+          '</div>' + '<div class="staff-wrap">' + Staff.build({ notes: [q.nota] }) + '</div>';
+      } else {
+        palco = '<div class="staff-wrap">' + Staff.build({ notes: [q.nota] }) + '</div>';
+      }
     }
 
     sc.innerHTML =
@@ -571,6 +681,8 @@
     }
     const ba = el('btn-ascolta');
     if (ba) ba.addEventListener('click', function () { s.riproduci(q); });
+    const bs = el('btn-sentibrano');
+    if (bs) bs.addEventListener('click', function () { ascoltaBrano(s.brano); });
     wireOpzioni(s, 0);
     el('btn-esci').addEventListener('click', function () { esci(); });
     agganciaPulsanteErrori(sc);
@@ -616,12 +728,12 @@
   }
 
   function apriRiepilogo(contesto) {
-    const s = App.sessione;
+    const s = giocoCorrente();
     if (!s) return;
     const rip = Gioco.riepilogaErrori(s);
     if (!rip) return;
     App.riepilogoAperto = true;
-    if (s.fase !== 'fine') s.pausa();
+    if (!finito(s)) s.pausa();
     const locale = I18n.getLingua() === 'en' ? 'en-GB' : 'it-IT';
 
     const testata = '<div class="rie-testata">' +
@@ -676,7 +788,7 @@
     ov.innerHTML = '<div class="modal riepilogo" role="dialog" aria-label="' + t('gioco.erroriTitolo') + '">' +
       testata + '<div class="rie-lista">' + voci + '</div>' +
       '<div class="rie-piede"><button class="btn primario" id="rie-chiudi">' +
-      (s.fase === 'fine' ? t('gioco.chiudi') : t('gioco.chiudiRiprendi')) + '</button></div></div>';
+      (finito(s) ? t('gioco.chiudi') : t('gioco.chiudiRiprendi')) + '</button></div></div>';
 
     ov.querySelectorAll('[data-ascolta]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -698,13 +810,22 @@
     ov.className = 'overlay';
     ov.innerHTML = '';
     if (typeof Sound !== 'undefined') Sound.stopAll();
-    const s = App.sessione;
-    if (s && s.fase !== 'fine') s.riprendi();
+    const s = giocoCorrente();
+    if (s && !finito(s)) s.riprendi();
   }
 
   function agganciaPulsanteErrori(radice) {
     const b = (radice || document).querySelector('#btn-errori');
     if (b) b.addEventListener('click', function () { apriRiepilogo('gioco'); });
+  }
+
+  /** Aggiorna solo il numero sul pulsante degli errori (partite lunghe). */
+  function aggiornaPulsanteErrori(s) {
+    const b = document.querySelector('#btn-errori');
+    if (!b) return;
+    const n = quantiErrori(s);
+    b.className = 'btn errori-btn' + (n ? '' : ' pulito');
+    b.innerHTML = '📋 ' + (n ? t('gioco.errori') + ' <span class="contatore">' + n + '</span>' : t('gioco.nessunErrore'));
   }
 
   function rispondiNome(i, nota) {
@@ -850,6 +971,7 @@
   function esci() {
     if (App.sessione) App.sessione.fermaTimer();
     App.sessione = null;
+    if (App.eroe) { App.eroe.interrompi(); App.eroe = null; }
     if (typeof Sound !== 'undefined') Sound.stopAll();
     el('level-picker').classList.remove('is-hidden');
     mostraSchermata('home');
@@ -894,7 +1016,7 @@
         '<div class="medaglia">' + med.icona + '</div>' +
         '<h1 class="esito">' + med.nome + '</h1>' +
         '<p class="mini">' + ris.modo.icona + ' ' + Gioco.nomeModo(ris.modo) + ' · ' +
-        T.nomeLivello(ris.livello) + '</p>' +
+        T.nomeLivello(ris.livello) + (ris.brano ? ' · ' + esc(Brani.titolo(ris.brano)) : '') + '</p>' +
         '<div class="punteggio-grande">' + g.punti + '<small>' + t('esiti.punti') + '</small></div>' +
         (nuovo ? '<div class="record-nuovo">' + t('esiti.nuovoRecord') + '</div>' :
           (record ? '<div class="mini">' + t('esiti.recordDaBattere', { n: record.punti }) + '</div>' : '')) +
@@ -910,7 +1032,7 @@
         '<button class="btn ghost" id="r-home">' + t('esiti.home') + '</button>' +
         '</div></div>';
       el('r-rigioca').addEventListener('click', function () {
-        partePartita(ris.modo.chiave, {});
+        partePartita(ris.modo.chiave, { brano: ris.brano ? ris.brano.chiave : undefined });
       });
       el('r-livello').addEventListener('click', function () { esci(); });
       const re = el('r-errori');
@@ -940,6 +1062,17 @@
       return;
     }
     const s = App.sessione;
+    // Violin Hero: 1 2 3 4 (oppure A S D F) per le quattro corde
+    if (App.eroe && App.schermata === 'play') {
+      if (ev.key === 'Escape') { esci(); return; }
+      const mappa = { '1': 0, '2': 1, '3': 2, '4': 3, a: 0, s: 1, d: 2, f: 3 };
+      const i = mappa[String(ev.key).toLowerCase()];
+      if (i !== undefined && App.eroe.corsie[i]) {
+        ev.preventDefault();
+        App.eroe.premi(App.eroe.corsie[i]);
+      }
+      return;
+    }
     if (!s || App.schermata !== 'play') {
       if (ev.key === 'Escape' && App.schermata !== 'home') {
         esci();
