@@ -26,7 +26,8 @@
       numOpzioni: 4,
       nomi: ['Giocatore 1', 'Giocatore 2'],
       secondiDue: 60,
-      posizioneStudio: 1
+      posizioneStudio: 1,
+      velocitaEroe: 1
     },
     best: {},
     imparaLivello: 'ragazzi',
@@ -480,10 +481,15 @@
         modo: modo,
         livello: App.opt.livello,
         nomi: App.opt.nomi,
+        velocita: App.opt.velocitaEroe,
         hooks: {
           onChange: function (g, evento) {
             if (evento === 'fine') mostraRisultati(g);
             else if (evento === 'nota') aggiornaPulsanteErrori(g);
+            else if (evento === 'tempo') {          // il tempo scelto resta per la volta dopo
+              App.opt.velocitaEroe = g.velocita;
+              salvaPreferenze();
+            }
           }
         }
       });
@@ -1125,6 +1131,9 @@
     // Violin Hero: 1 2 3 4 (oppure A S D F) per le quattro corde
     if (App.eroe && App.schermata === 'play') {
       if (ev.key === 'Escape') { esci(); return; }
+      // − e + (sulla tastiera - e =) rallentano e accelerano il brano
+      if (ev.key === '-' || ev.key === '_') { ev.preventDefault(); App.eroe.cambiaVelocita(-1); return; }
+      if (ev.key === '+' || ev.key === '=') { ev.preventDefault(); App.eroe.cambiaVelocita(1); return; }
       const mappa = { '1': 0, '2': 1, '3': 2, '4': 3, a: 0, s: 1, d: 2, f: 3 };
       const i = mappa[String(ev.key).toLowerCase()];
       if (i !== undefined && App.eroe.corsie[i]) {
@@ -1204,9 +1213,18 @@
   function ridisegna() {
     applicaLingua();
     renderLevelPicker();
-    if (App.sessione && App.schermata === 'play') renderPlay();
+    if (App.eroe && App.schermata === 'play') {
+      // Violin Hero: la partita va avanti, cambiano le etichette
+      App.eroe.aggiornaTesti();
+      const aiuto = document.querySelector('#eroe-piede .mini');
+      if (aiuto) aiuto.textContent = Gioco.aiutoModo(App.eroe.modo);
+      const esci = el('btn-esci');
+      if (esci) esci.textContent = t('gioco.esci');
+      aggiornaPulsanteErrori(App.eroe);
+    }
+    else if (App.sessione && App.schermata === 'play') renderPlay();
     else if (App.schermata === 'learn') renderLearn();
-    else if (App.schermata === 'results' && App.sessione) mostraRisultati(App.sessione);
+    else if (App.schermata === 'results' && giocoCorrente()) mostraRisultati(giocoCorrente());
     else renderHome();
   }
 

@@ -550,6 +550,16 @@ body[data-lingua="en"] [data-lingua-solo="it"] { display: none !important; }
 .eroe-pezzo { font-weight: 700; font-size: 14px; }
 .eroe-punti, .eroe-serie { font-size: 15px; color: var(--ink-2); }
 .eroe-punti b, .eroe-serie b { font-size: 19px; color: var(--legno); }
+.eroe-tempo { display: flex; align-items: center; gap: 10px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 12px; padding: 6px 12px; }
+.eroe-tempo-nome { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.eroe-tempo-btn { font: inherit; font-weight: 800; cursor: pointer; width: 34px; height: 34px;
+  flex: none; border-radius: 10px; border: 2px solid var(--line); border-bottom-width: 3px;
+  background: var(--panel); color: var(--ink); display: grid; place-items: center; }
+.eroe-tempo-btn:hover { border-color: var(--legno-2); }
+.eroe-tempo-cursore { flex: 1; min-width: 80px; accent-color: var(--legno); cursor: pointer; }
+.eroe-tempo-val { font-size: 13px; font-weight: 700; color: var(--ink-3); white-space: nowrap;
+  min-width: 92px; text-align: right; }
 .eroe-pista { position: relative; height: 58vh; min-height: 320px; max-height: 520px;
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
   border: 1px solid var(--line); border-radius: var(--radius, 16px); overflow: hidden; }
@@ -613,6 +623,11 @@ body[data-lingua="en"] [data-lingua-solo="it"] { display: none !important; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .nota-grande { font-size: 32px; }
   .punteggio-grande { font-size: 42px; }
+  /* il comando del tempo di Violin Hero: spazio al cursore, non alla parola */
+  .eroe-tempo { gap: 6px; padding: 6px 8px; }
+  .eroe-tempo-nome { display: none; }
+  .eroe-tempo-btn { width: 32px; height: 32px; }
+  .eroe-tempo-val { min-width: 74px; font-size: 12px; }
 }
 @media (max-width: 420px) {
   .modi { grid-template-columns: 1fr; }

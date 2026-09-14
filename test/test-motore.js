@@ -409,6 +409,60 @@ titolo('9. Violin Hero: caduta delle note e punteggi');
   ok(Math.abs(g2.note[0].tempo - (tempoPrima + 5)) < 0.001,
     'la pausa sposta le note in avanti di quanto è durata');
   ok(g2.stato !== 'fine', 'la pausa non termina la partita');
+
+  /* --- il tempo del brano si può cambiare --- */
+  ok(window.Eroe.VELOCITA[0] === 0.5 &&
+    window.Eroe.VELOCITA[window.Eroe.VELOCITA.length - 1] === 1.6 &&
+    window.Eroe.VELOCITA.every(function (v, i, a) {
+      return i === 0 || Math.abs(v - a[i - 1] - 0.05) < 1e-9;
+    }), 'le velocità vanno da 0,5× a 1,6× a scatti di 0,05');
+  ok(window.Eroe.normalizzaVelocita(0.83) === 0.85, 'una velocità fuori scatto viene avvicinata');
+  ok(window.Eroe.normalizzaVelocita(9) === 1.6 && window.Eroe.normalizzaVelocita(0.01) === 0.5,
+    'le velocità fuori intervallo vengono limitate');
+
+  const lento = new window.Eroe.Gioco({ brano: brano, velocita: 0.5 });
+  const veloce = new window.Eroe.Gioco({ brano: brano, velocita: 1.6 });
+  ok(Math.abs(lento.battito / veloce.battito - 1.6 / 0.5) < 1e-9,
+    'il battito è inversamente proporzionale alla velocità');
+  ok(Math.abs(lento.durata() / veloce.durata() - 1.6 / 0.5) < 1e-9,
+    'a tempo più lento il brano dura di più');
+
+  const g3 = new window.Eroe.Gioco({ brano: brano, velocita: 1 });
+  finto = 0; g3.avvia();
+  finto = 3000; raf();
+  const ora3 = finto / 1000;
+  const battitiPrima = (ora3 - g3._t0) / g3.battito;
+  const vicina = g3.note.slice().sort(function (a, b) {
+    return Math.abs(a.tempo - ora3) - Math.abs(b.tempo - ora3);
+  })[0];
+  const distanzaPrima = Math.abs(vicina.tempo - ora3);
+  const battitoPrima = g3.battito;
+  g3.impostaVelocita(1.5);
+  ok(g3.velocita === 1.5, 'la velocità richiesta viene accettata');
+  ok(Math.abs(g3.battito - battitoPrima / 1.5) < 1e-9, 'il battito si accorcia di 1,5 volte');
+  ok(Math.abs((ora3 - g3._t0) / g3.battito - battitiPrima) < 1e-9,
+    'cambiando tempo il punto in cui siamo non si sposta');
+  ok(Math.abs(Math.abs(vicina.tempo - ora3) - distanzaPrima / 1.5) < 1e-9,
+    'la nota che stava arrivando si avvicina di 1,5 volte');
+  ok(Math.abs(vicina.tempo - (g3._t0 + vicina.battito * g3.battito)) < 1e-9,
+    'ogni nota resta al suo battito');
+
+  /* il tempo scelto durante la pausa si applica alla ripresa, senza salti */
+  const g4 = new window.Eroe.Gioco({ brano: brano, velocita: 1 });
+  finto = 0; g4.avvia();
+  finto = 3000; raf();
+  const battiti4 = (3000 / 1000 - g4._t0) / g4.battito;
+  g4.pausa();
+  finto = 5000;
+  g4.impostaVelocita(0.5);
+  ok(g4.velocita === 1, 'durante la pausa il tempo non cambia sotto le note ferme');
+  g4.riprendi();
+  ok(g4.velocita === 0.5, 'alla ripresa si applica il tempo scelto');
+  ok(Math.abs((5000 / 1000 - g4._t0) / g4.battito - battiti4) < 1e-9,
+    'nemmeno alla ripresa le note saltano');
+  const attesa4 = g4.note.filter(function (n) { return n.stato === 'attesa'; })[0];
+  ok(attesa4 && Math.abs(attesa4.tempo - (g4._t0 + attesa4.battito * g4.battito)) < 1e-9,
+    'ogni nota ancora da suonare è al suo battito, con il nuovo tempo');
 })();
 
 /* ------------------------------------------------------------------ esito */

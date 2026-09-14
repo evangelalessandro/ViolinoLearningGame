@@ -16,6 +16,31 @@ window.Eroe = (function () {
   const FINESTRA_BUONO = 0.19;
   const CADUTA = 2.4;               // secondi che una nota impiega a cadere
   const CONTO_INIZIALE = 4;         // battiti di conteggio prima di suonare
+  const BPM_BASE = 90;              // tempo usato se il brano non ne dichiara uno
+
+  /* Il tempo del brano si può cambiare: 1× è il tempo scritto, 0,5× è la metà
+     (per studiare le note difficili) e 1,6× è più veloce del tempo scritto. */
+  const VEL_MIN = 0.5;
+  const VEL_MAX = 1.6;
+  const VEL_PASSO = 0.05;
+  const VELOCITA = (function () {
+    const v = [];
+    for (let x = VEL_MIN; x <= VEL_MAX + 1e-9; x += VEL_PASSO) v.push(Math.round(x * 100) / 100);
+    return v;
+  })();
+
+  /** Riporta una velocità qualsiasi a uno degli scatti consentiti. */
+  function normalizzaVelocita(v) {
+    const n = Number(v);
+    if (!isFinite(n)) return 1;
+    const scatti = Math.round(n / VEL_PASSO);
+    return Math.min(VEL_MAX, Math.max(VEL_MIN, Math.round(scatti * VEL_PASSO * 100) / 100));
+  }
+
+  /** Testo tradotto (i18n.js è caricato prima di questo file). */
+  function tr(chiave, vars) {
+    return (window.I18n && window.I18n.t) ? window.I18n.t(chiave, vars) : chiave;
+  }
 
   /* --------------------------------------------------------------- costruttore */
   function Gioco(cfg) {
@@ -24,7 +49,10 @@ window.Eroe = (function () {
     this.modo = cfg.modo || null;
     this.chiaveLivello = cfg.livello || 'ragazzi';
     this.livello = T.LEVELS[this.chiaveLivello] || T.LEVELS.ragazzi;
-    this.velocita = cfg.velocita || this.livello.velocitaEroe || 1;
+    this.velocita = normalizzaVelocita(cfg.velocita == null
+      ? (this.livello.velocitaEroe || 1) : cfg.velocita);
+    this.bpmBase = (this.brano && this.brano.bpm) || BPM_BASE;
+    this._velocitaAttesa = null;
     this.hooks = cfg.hooks || {};
     this.corsie = T.STRINGS.map(function (s) { return s.id; });   // G D A E
     this.nomeGiocatore = (cfg.nomi && cfg.nomi[0]) || (T.getLingua() === 'en' ? 'Player 1' : 'Giocatore 1');
@@ -46,7 +74,7 @@ window.Eroe = (function () {
   /** Trasforma le note del brano in note che cadono, con corda e tempo. */
   Gioco.prototype.preparaNote = function () {
     if (!this.brano) return [];
-    const bpm = (this.brano.bpm || 90) * this.velocita;
+    const bpm = this.bpmBase * this.velocita;
     this.battito = 60 / bpm;
     let battiti = 0;
     const self = this;
@@ -93,6 +121,98 @@ window.Eroe = (function () {
     if (this.hooks.onChange) this.hooks.onChange(this, evento);
   };
 
+  /* -------------------------------------------------------------- velocità */
+  /**
+   * Cambia il tempo del brano (1 = tempo scritto) senza far saltare le note:
+   * si conserva la posizione in battiti, quindi la nota che sta arrivando sulla
+   * linea resta lì e le altre si avvicinano o si allontanano in proporzione.
+   * @param {number} v velocità desiderata (viene riportata agli scatti previsti)
+   * @returns {number} la velocità effettiva
+   */
+  Gioco.prototype.impostaVelocita = function (v) {
+    const nuova = normalizzaVelocita(v);
+    // durante la pausa l'orologio è fermo: si applica alla ripresa
+    if (this._pausa) {
+      this._velocitaAttesa = nuova;
+      this.aggiornaTempo();
+      return this.velocita;
+    }
+    if (nuova === this.velocita) {
+      this.aggiornaTempo();
+      return this.velocita;
+    }
+    const vecchio = this.battito;
+    const ora = performance.now() / 1000;
+    const partito = this._t0 > 0 && this.stato !== 'pronto';
+    const posizione = partito ? (ora - this._t0) / vecchio : 0;   // in battiti
+    this.velocita = nuova;
+    this.battito = 60 / (this.bpmBase * nuova);
+    if (partito) {
+      this._t0 = ora - posizione * this.battito;
+      const self = this;
+      this.note.forEach(function (n) {
+        if (n.stato === 'attesa') n.tempo = self._t0 + n.battito * self.battito;
+      });
+    }
+    this.aggiornaTempo();
+    this.notifica('tempo');
+    return this.velocita;
+  };
+
+  /** Alza o abbassa il tempo di `passi` scatti (per i pulsanti − e +). */
+  Gioco.prototype.cambiaVelocita = function (passi) {
+    return this.impostaVelocita((this._velocitaAttesa || this.velocita) + passi * VEL_PASSO);
+  };
+
+  /** Aggiorna il comando del tempo (cursore ed etichetta), se c'è. */
+  Gioco.prototype.aggiornaTempo = function () {
+    const h = this._hud;
+    if (!h) return;
+    const v = this._velocitaAttesa || this.velocita;
+    if (h.tempoCursore) h.tempoCursore.value = v;
+    if (h.tempoVal) {
+      const loc = (T.getLingua() === 'en') ? 'en-GB' : 'it-IT';
+      h.tempoVal.textContent = tr('eroe.tempoVal', {
+        // 0,75 in italiano e 0.75 in inglese, come il resto dell'app
+        v: Number(v.toFixed(2)).toLocaleString(loc, { maximumFractionDigits: 2 }),
+        bpm: Math.round(this.bpmBase * v)
+      });
+    }
+  };
+
+  /** Riscrive le etichette della pista quando cambia la lingua (la partita continua). */
+  Gioco.prototype.aggiornaTesti = function () {
+    if (!this.dom) return;
+    const self = this;
+    const pezzo = this.dom.querySelector('.eroe-pezzo');
+    if (pezzo && this.brano) pezzo.textContent = Brani.titolo(this.brano);
+    const nomeT = this.dom.querySelector('.eroe-tempo-nome');
+    if (nomeT) nomeT.textContent = tr('eroe.tempo');
+    const cursore = this.dom.querySelector('#eroe-tempo');
+    if (cursore) {
+      cursore.title = tr('eroe.tempo');
+      cursore.setAttribute('aria-label', tr('eroe.tempo'));
+    }
+    this.dom.querySelectorAll('.eroe-tempo-btn').forEach(function (b) {
+      const chiave = b.getAttribute('data-passo') === '-1' ? 'eroe.tempoMeno' : 'eroe.tempoPiu';
+      b.title = tr(chiave);
+      b.setAttribute('aria-label', tr(chiave));
+    });
+    this.corsie.forEach(function (id) {
+      const nome = T.nomeCorda(id);
+      const corda = self.dom.querySelector('.eroe-corsia[data-corda="' + id + '"] .eroe-corda-nome');
+      if (corda) corda.textContent = nome;
+      const tasto = self.dom.querySelector('.eroe-tasto[data-corda="' + id + '"] .eroe-tasto-corda');
+      if (tasto) tasto.textContent = nome;
+    });
+    this.note.forEach(function (n) {
+      if (!n._el) return;
+      const e = n._el.querySelector('.eroe-nota-nome');
+      if (e) e.textContent = T.solfege(n.nota);
+    });
+    this.aggiornaTempo();
+  };
+
   /* ------------------------------------------------------------------ pausa */
   /* Serve al riepilogo degli errori: le note restano ferme dove sono. */
   Gioco.prototype.pausa = function () {
@@ -109,6 +229,12 @@ window.Eroe = (function () {
     this._t0 += durata;
     this.note.forEach(function (n) { n.tempo += durata; });
     this._pausa = false;
+    // un tempo scelto durante la pausa si applica adesso
+    if (this._velocitaAttesa) {
+      const v = this._velocitaAttesa;
+      this._velocitaAttesa = null;
+      this.impostaVelocita(v);
+    }
     const self = this;
     this._raf = requestAnimationFrame(function () { self.passo(); });
     this.notifica('riprendi');
@@ -289,6 +415,17 @@ window.Eroe = (function () {
       '<span class="eroe-punti"><b>' + gioco.punti + '</b></span>' +
       '<span class="eroe-serie">🔥 <b>' + gioco.serie + '</b></span>' +
       '</div>' +
+      '<div class="eroe-tempo">' +
+      '<span class="eroe-tempo-nome">' + tr('eroe.tempo') + '</span>' +
+      '<button type="button" class="eroe-tempo-btn" data-passo="-1" title="' +
+      tr('eroe.tempoMeno') + '" aria-label="' + tr('eroe.tempoMeno') + '">−</button>' +
+      '<input type="range" class="eroe-tempo-cursore" id="eroe-tempo" min="' + VEL_MIN +
+      '" max="' + VEL_MAX + '" step="' + VEL_PASSO + '" value="' + gioco.velocita +
+      '" title="' + tr('eroe.tempo') + '" aria-label="' + tr('eroe.tempo') + '">' +
+      '<button type="button" class="eroe-tempo-btn" data-passo="1" title="' +
+      tr('eroe.tempoPiu') + '" aria-label="' + tr('eroe.tempoPiu') + '">+</button>' +
+      '<span class="eroe-tempo-val" id="eroe-tempo-val"></span>' +
+      '</div>' +
       '<div class="eroe-pista" id="eroe-pista">' +
       '<div class="eroe-corsie">' + stringhe + '</div>' +
       '<div class="eroe-linea"></div>' +
@@ -304,8 +441,21 @@ window.Eroe = (function () {
     gioco._hud = {
       punti: contenitore.querySelector('.eroe-punti b'),
       serie: contenitore.querySelector('.eroe-serie b'),
-      sug: contenitore.querySelector('#eroe-suggerimento')
+      sug: contenitore.querySelector('#eroe-suggerimento'),
+      tempoCursore: contenitore.querySelector('#eroe-tempo'),
+      tempoVal: contenitore.querySelector('#eroe-tempo-val')
     };
+    // comando del tempo: cursore e pulsanti − / +
+    gioco._hud.tempoCursore.addEventListener('input', function () {
+      gioco.impostaVelocita(parseFloat(gioco._hud.tempoCursore.value));
+    });
+    contenitore.querySelectorAll('.eroe-tempo-btn').forEach(function (b) {
+      b.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        gioco.cambiaVelocita(parseFloat(b.getAttribute('data-passo')));
+      });
+    });
+    gioco.aggiornaTempo();
     // le note cadono come elementi dentro la corsia
     gioco.note.forEach(function (n, i) {
       const el = document.createElement('div');
@@ -379,5 +529,9 @@ window.Eroe = (function () {
     return g;
   }
 
-  return { Gioco: Gioco, avvia: avvia, CADUTA: CADUTA };
+  return {
+    Gioco: Gioco, avvia: avvia, CADUTA: CADUTA,
+    VEL_MIN: VEL_MIN, VEL_MAX: VEL_MAX, VEL_PASSO: VEL_PASSO, VELOCITA: VELOCITA,
+    normalizzaVelocita: normalizzaVelocita
+  };
 })();

@@ -87,6 +87,13 @@ actually played (G, D, A, E). Hit the right lane in time — tap the four button
 Four beats of count-in, then it starts; perfect timing is worth double, missing a note breaks
 the streak, and a stray tap costs nothing.
 
+The **Tempo** control above the lanes changes the speed of the piece while you play: drag the
+slider, use the **−** / **+** buttons or the `-` / `+` keys, and the label shows the speed and
+the resulting BPM (`0.8× · 80 BPM` for Ode to Joy, which is written at 100). The notes never jump:
+whatever is arriving on the line
+stays there and the rest stretches or squeezes around it, so you can slow a passage down,
+learn it, and speed it back up. The choice is remembered for the next time (0.5× to 1.6×).
+
 ### 📋 Mistakes review
 
 Every game has a **📋 Mistakes** button (with the number of wrong answers): it opens a panel
@@ -240,7 +247,8 @@ you read), and a simulation of **all 32 game × level combinations** played to t
 interface, that every button really responds, that the mistakes review opens and pauses the
 clock, that the **language button** translates the whole interface and the note names, that the
 fixed answer keyboard has a **separate key for each note in each octave** (so G4 really answers
-a question about G4 and not about G3), and
+a question about G4 and not about G3), that the **Tempo** control of Violin Hero really changes
+the speed (slider, −/+ buttons, `-`/`+` keys, and it stays reachable on a phone), and
 that the word `undefined` never appears on screen (the classic symptom of a property spelled
 differently in the interface than where it is defined). It needs the app served over HTTP:
 

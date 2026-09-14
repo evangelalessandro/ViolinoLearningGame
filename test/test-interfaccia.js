@@ -129,6 +129,13 @@ if (!CHROME) {
     return p;
   }
 
+  /** Un tasto vero della tastiera (i tasti arrivano al documento). */
+  async function premiTasto(key, code, keyCode) {
+    const k = { key: key, code: code, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode };
+    await invia('Input.dispatchKeyEvent', Object.assign({ type: 'rawKeyDown' }, k));
+    await invia('Input.dispatchKeyEvent', Object.assign({ type: 'keyUp' }, k));
+  }
+
   /** Che cosa c'è davvero sotto il centro dell'elemento? */
   function sopra(selettore) {
     return valuta(
@@ -181,7 +188,11 @@ if (!CHROME) {
     await invia('Page.addScriptToEvaluateOnNewDocument', {
       source: 'window.__errori=[];window.addEventListener("error",function(e){window.__errori.push((e.error&&e.error.stack)||e.message);});' +
         // la lingua dipende dal browser: per il test la fissiamo all'italiano
-        'try{localStorage.setItem("violino.lingua","it");}catch(e){}'
+        'try{localStorage.setItem("violino.lingua","it");}catch(e){}' +
+        // il profilo di Chrome è riusato fra un giro e l\'altro: il tempo scelto
+        // in Violin Hero riparte da 1× come per un utente nuovo
+        'try{var _o=JSON.parse(localStorage.getItem("violino.opt")||"{}");' +
+        '_o.velocitaEroe=1;localStorage.setItem("violino.opt",JSON.stringify(_o));}catch(e){}'
     });
 
     console.log('── Niente deve coprire l\'interfaccia ' + '─'.repeat(28));
@@ -479,10 +490,125 @@ if (!CHROME) {
     check('una nota presa a tempo vale "perfetto"', colpita, 'perfetto');
     check('il punteggio sale', await valuta('return App.eroe.punti > 0;'), true);
     check('esiste il pulsante degli errori', await valuta('return !!document.getElementById("btn-errori");'), true);
+
+    // il tempo del brano: si rallenta e si accelera (anche in corsa)
+    check('c\'è il comando del tempo', await valuta(
+      'return document.querySelectorAll(".eroe-tempo").length === 1 &&' +
+      ' !!document.getElementById("eroe-tempo") &&' +
+      ' document.querySelectorAll(".eroe-tempo-btn").length === 2;'), true);
+    check('si parte dal tempo scritto (1×)', await valuta('return App.eroe.velocita;'), 1);
+    const bpmBase = await valuta('return App.eroe.bpmBase;');
+    check('l\'etichetta dice velocità e BPM', await valuta(
+      'var g=App.eroe, e=document.getElementById("eroe-tempo-val");' +
+      'return e.textContent === "1× · " + Math.round(g.bpmBase) + " BPM";'), true);
+    await clickVero('.eroe-tempo-btn[data-passo="-1"]');         // un click vero
+    check('il pulsante − rallenta di uno scatto', await valuta('return App.eroe.velocita;'), 0.95);
+    await clickVero('.eroe-tempo-btn[data-passo="1"]');
+    await clickVero('.eroe-tempo-btn[data-passo="1"]');
+    check('i pulsanti + accelerano', await valuta('return App.eroe.velocita;'), 1.05);
+    check('il cursore segue la velocità', await valuta(
+      'return parseFloat(document.getElementById("eroe-tempo").value);'), 1.05);
+    check('l\'etichetta si aggiorna (con la virgola in italiano)', await valuta(
+      'return document.getElementById("eroe-tempo-val").textContent;'),
+      '1,05× · ' + Math.round(bpmBase * 1.05) + ' BPM');
+    check('il cursore comanda davvero il tempo', await valuta(
+      'var c=document.getElementById("eroe-tempo");' +
+      'c.value=0.8; c.dispatchEvent(new Event("input", {bubbles:true}));' +
+      'return App.eroe.velocita;'), 0.8);
+    await premiTasto('-', 'Minus', 189);
+    check('col tasto − si rallenta', await valuta('return App.eroe.velocita;'), 0.75);
+    await premiTasto('=', 'Equal', 187);
+    check('col tasto + si accelera', await valuta('return App.eroe.velocita;'), 0.8);
+    // accelerare avvicina la nota che sta arrivando senza spostarla dal suo battito
+    const salto = await valuta(
+      'var g=App.eroe, adesso=performance.now()/1000, n=null;' +
+      'for (var i=0;i<g.note.length;i++){' +
+      '  var x=g.note[i]; if (x.stato==="attesa" && x.tempo-adesso>0.3){ n=x; break; } }' +
+      'if (!n) return {trovata:false};' +
+      'var prima=n.tempo-adesso, battitiPrima=prima/g.battito;' +
+      'g.impostaVelocita(1.6);' +
+      'var dopo=n.tempo-performance.now()/1000;' +
+      'return {trovata:true, prima:prima, dopo:dopo, primaB:battitiPrima,' +
+      ' dopoB:dopo/g.battito, vel:g.velocita};');
+    ok('accelerando, la nota in arrivo si avvicina',
+      !!salto && salto.trovata && salto.vel === 1.6 && salto.dopo < salto.prima * 0.7,
+      'da ' + (salto && salto.prima && salto.prima.toFixed(2)) + ' s a ' +
+      (salto && salto.dopo && salto.dopo.toFixed(2)) + ' s');
+    ok('la nota resta al suo punto del brano (niente salti)',
+      !!salto && salto.trovata && Math.abs(salto.dopoB - salto.primaB) < 0.02,
+      'battito ' + (salto && salto.primaB && salto.primaB.toFixed(2)) + ' → ' +
+      (salto && salto.dopoB && salto.dopoB.toFixed(2)));
+    check('il tempo scelto resta salvato per la prossima volta', await valuta(
+      'return JSON.parse(localStorage.getItem("violino.opt")).velocitaEroe;'), 1.6);
+    // si rallenta a metà tempo: così il brano non finisce mentre si prova il resto
+    check('si può rallentare fino a metà tempo', await valuta('return App.eroe.impostaVelocita(0.5);'), 0.5);
+    // sul telefono il comando del tempo deve restare toccabile e fuori dalle corsie
+    await invia('Emulation.setDeviceMetricsOverride', { width: 390, height: 780, deviceScaleFactor: 2, mobile: true });
+    await attesa(400);
+    check('su telefono il comando del tempo non copre le corsie', await valuta(
+      'var t=document.querySelector(".eroe-tempo").getBoundingClientRect();' +
+      'var p=document.querySelector(".eroe-pista").getBoundingClientRect();' +
+      'return t.bottom <= p.top + 1 && t.right <= window.innerWidth + 1;'), true);
+    check('su telefono il pulsante + del tempo è toccabile', await sopra('.eroe-tempo-btn[data-passo="1"]'), 'libero');
+    check('su telefono il cursore resta comodo', await valuta(
+      'return document.querySelector(".eroe-tempo-cursore").getBoundingClientRect().width;') > 120, true);
+    await invia('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+    await attesa(300);
+
+    // cambiando lingua a partita in corso non si deve tornare alla home per sbaglio
+    const puntiPrima = await valuta('return App.eroe.punti;');
+    const notePrima = await valuta('return document.querySelectorAll(".eroe-nota").length;');
+    check('la partita è ancora in corso', await valuta('return App.eroe.stato !== "fine";'), true);
+    await clickVero('#btn-lingua');
+    await attesa(500);
+    check('cambiando lingua si resta in partita', await valuta(
+      'return document.getElementById("screen-play").classList.contains("is-active") && !!App.eroe;'), true);
+    check('la partita non riparte da capo', await valuta('return App.eroe.punti;'), puntiPrima);
+    check('le note cadenti restano', await valuta('return document.querySelectorAll(".eroe-nota").length;'), notePrima);
+    check('le corde passano alle lettere', await valuta(
+      'return Array.from(document.querySelectorAll(".eroe-corda-nome")).map(function(e){return e.textContent;}).join(",");'),
+      'G,D,A,E');
+    check('le note cadenti passano alle lettere', await valuta(
+      'var n=document.querySelector(".eroe-nota-nome").textContent; return /^[A-G][♯♭]?$/.test(n);'), true);
+    check('i comandi passano all\'inglese', await valuta(
+      'return document.getElementById("btn-esci").textContent === "Quit" &&' +
+      ' /Errors|No mistakes/.test(document.getElementById("btn-errori").textContent);'), true);
+    check('il tempo si scrive col punto in inglese', await valuta(
+      'return document.getElementById("eroe-tempo-val").textContent;'),
+      '0.5× · ' + Math.round(bpmBase * 0.5) + ' BPM');
+    await clickVero('#btn-lingua');
+    await attesa(500);
+    check('si torna all\'italiano restando in partita', await valuta(
+      'return I18n.getLingua() + "|" + document.querySelector(".eroe-corda-nome").textContent + "|" +' +
+      ' document.getElementById("eroe-tempo-val").textContent;'),
+      'it|Sol|0,5× · ' + Math.round(bpmBase * 0.5) + ' BPM');
+    check('nessun errore JavaScript', await valuta('return window.__errori || [];'), []);
     await clickVero('#btn-esci');
     await attesa(400);
     check('si esce dal gioco Eroe', await valuta('return document.getElementById("screen-home").classList.contains("is-active");'), true);
     check('nessun errore JavaScript', await valuta('return window.__errori || [];'), []);
+
+    // a brano finito la schermata dei risultati non deve buttare alla home
+    await clickVero('[data-modo="eroe"]');
+    await attesa(500);
+    await clickVero('[data-scegli="gioia"]');
+    await attesa(800);
+    await valuta('App.eroe.fine(); return true;');
+    await attesa(400);
+    check('a brano finito si vedono i risultati', await valuta(
+      'return document.getElementById("screen-results").classList.contains("is-active");'), true);
+    await clickVero('#btn-lingua');
+    await attesa(500);
+    check('cambiando lingua si resta sui risultati', await valuta(
+      'return I18n.getLingua() + "|" + document.getElementById("screen-results").classList.contains("is-active");'),
+      'en|true');
+    await clickVero('#btn-lingua');
+    await attesa(500);
+    check('e si torna in italiano', await valuta('return I18n.getLingua();'), 'it');
+    await clickVero('#btn-home');
+    await attesa(500);
+    check('dai risultati si torna alla home', await valuta(
+      'return document.getElementById("screen-home").classList.contains("is-active");'), true);
 
     console.log('── Tastiera delle note fissa ' + '─'.repeat(36));
     await invia('Page.navigate', { url: URL_APP });

@@ -88,8 +88,8 @@ window.Gioco = (function () {
       giocatori: 1, grandi: true, brano: true,
       desc: 'Le note del brano cadono dall\'alto: tocca la corda giusta a tempo!',
       descEn: 'The notes of the piece fall from the top: hit the right string in time!',
-      aiuto: 'Ogni corsia è una corda: Sol, Re, La, Mi. Tasti 1 2 3 4 oppure tocca i pulsanti.',
-      aiutoEn: 'Each lane is a string: G, D, A, E. Keys 1 2 3 4 or just tap the buttons.'
+      aiuto: 'Ogni corsia è una corda: Sol, Re, La, Mi. Tasti 1 2 3 4 oppure tocca i pulsanti. Col comando Tempo (o con − e +) rallenti o acceleri il brano.',
+      aiutoEn: 'Each lane is a string: G, D, A, E. Keys 1 2 3 4 or just tap the buttons. Use the Tempo control (or − and +) to slow the piece down or speed it up.'
     }
   };
   const ORDINE = ['leggi', 'trova', 'orecchio', 'tempo', 'tastiera', 'duello', 'contemporanea', 'testa', 'brano', 'eroe'];

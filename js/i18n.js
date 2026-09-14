@@ -50,6 +50,10 @@ window.I18n = (function () {
     'brani.titolo': 'Brano',
     'eroe.pronti': 'Pronti…',
     'eroe.tocca': 'Tocca la corda giusta quando la nota arriva sulla linea',
+    'eroe.tempo': 'Tempo',
+    'eroe.tempoMeno': 'Rallenta il brano',
+    'eroe.tempoPiu': 'Accelera il brano',
+    'eroe.tempoVal': '{v}× · {bpm} BPM',
     'nome.giocatore': 'Giocatore {n}',
 
     'gioco.punti': 'Punti',
@@ -159,6 +163,10 @@ window.I18n = (function () {
     'brani.titolo': 'Piece',
     'eroe.pronti': 'Ready…',
     'eroe.tocca': 'Hit the right string when the note reaches the line',
+    'eroe.tempo': 'Tempo',
+    'eroe.tempoMeno': 'Slow the piece down',
+    'eroe.tempoPiu': 'Speed the piece up',
+    'eroe.tempoVal': '{v}× · {bpm} BPM',
     'nome.giocatore': 'Player {n}',
 
     'gioco.punti': 'Points',

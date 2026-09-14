@@ -88,6 +88,13 @@ o premi i tasti 1 2 3 4 — e l'app suona quella nota: suonando bene senti la me
 si costruisce. Quattro battiti di conteggio e si parte; il tempo perfetto vale doppio, una nota
 mancata interrompe la serie, un tocco a vuoto non costa nulla.
 
+Il comando **Tempo** sopra le corsie cambia la velocità del brano mentre giochi: trascina il
+cursore, usa i pulsanti **−** e **+** oppure i tasti `-` e `+`, e l'etichetta mostra la velocità
+e i BPM che ne risultano (`0,8× · 80 BPM` per l'Inno alla Gioia, che è scritto a 100). Le note non saltano mai: quella che sta arrivando
+sulla linea resta lì e le altre si stringono o si allargano intorno a lei, così puoi rallentare
+un passaggio, impararlo e riaccelerare. La scelta resta memorizzata per la volta dopo
+(da 0,5× a 1,6×).
+
 ### 📋 Riepilogo degli errori
 
 In ogni gioco c'è il pulsante **📋 Errori** (con il numero di sbagli): apre un pannello che
@@ -247,7 +254,8 @@ velo o modale dimenticata copra l'interfaccia, che ogni pulsante risponda davver
 riepilogo degli errori si apra e metta in pausa l'orologio, che il **pulsante della lingua**
 traduca tutta l'interfaccia e i nomi delle note, che la tastiera fissa delle risposte abbia
 **un tasto distinto per ogni nota di ogni ottava** (così Sol4 risponde davvero a una domanda su
-Sol4 e non su Sol3), e che non compaia mai la scritta
+Sol4 e non su Sol3), che il comando **Tempo** di Violin Hero cambi davvero la velocità (cursore,
+pulsanti −/+, tasti `-`/`+`, e resti raggiungibile sul telefono), e che non compaia mai la scritta
 `undefined` a schermo (sintomo tipico di una proprietà scritta con un nome diverso da quello
 usato nell'interfaccia).
 Per eseguirlo serve l'app servita via HTTP:
