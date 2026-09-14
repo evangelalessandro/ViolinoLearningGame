@@ -73,30 +73,37 @@ window.Staff = (function () {
       '<path d="' + CHIAVE_D + '"/></g>';
   }
 
-  function tagli(step) {
+  function tagli(step, cx) {
     let out = '';
-    if (step >= 10) for (let v = 10; v <= step; v += 2) out += taglio(v);
-    if (step <= -2) for (let v = -2; v >= step; v -= 2) out += taglio(v);
+    if (step >= 10) for (let v = 10; v <= step; v += 2) out += taglio(v, cx);
+    if (step <= -2) for (let v = -2; v >= step; v -= 2) out += taglio(v, cx);
     return out;
   }
-  function taglio(step) {
+  function taglio(step, cx) {
     const yy = y(step);
-    return '<line class="st-ledger" x1="' + (CX - 20) + '" y1="' + yy + '" x2="' + (CX + 20) + '" y2="' + yy + '"/>';
+    const c = cx == null ? CX : cx;
+    return '<line class="st-ledger" x1="' + (c - 20) + '" y1="' + yy + '" x2="' + (c + 20) + '" y2="' + yy + '"/>';
   }
 
-  function testa(step, alter, opt) {
+  function testa(step, alter, opt, cx, scala) {
+    const c = cx == null ? CX : cx;
+    const k = scala == null ? 1 : scala;      // 1 = nota grande, < 1 = spartito compatto
     const yy = y(step);
     const alto = step < 4;         // gambo in su sotto la 3ª riga (B4)
-    const sx = alto ? CX + 9.2 : CX - 9.2;
-    const sy2 = alto ? yy - 3.5 * S : yy + 3.5 * S;
+    const sx = alto ? c + 9.2 * k : c - 9.2 * k;
+    const sy2 = alto ? yy - 3.5 * S * k : yy + 3.5 * S * k;
     let out = '';
-    out += '<ellipse class="st-head" cx="' + CX + '" cy="' + yy + '" rx="9.4" ry="6.7" ' +
-      'transform="rotate(-20 ' + CX + ' ' + yy + ')"/>';
+    if (opt && opt.evidenzia) {
+      out += '<circle class="st-evidenza" cx="' + c + '" cy="' + yy + '" r="' + (16 * k) + '"/>';
+    }
+    out += '<ellipse class="' + (opt && opt.classe ? opt.classe : 'st-head') + '" cx="' + c + '" cy="' + yy +
+      '" rx="' + (9.4 * k) + '" ry="' + (6.7 * k) + '" ' +
+      'transform="rotate(-20 ' + c + ' ' + yy + ')"/>';
     out += '<line class="st-stem" x1="' + sx + '" y1="' + yy + '" x2="' + sx + '" y2="' + sy2 + '"/>';
     if (alter) {
       const sym = alter > 0 ? '\u266F' : '\u266D';
-      out += '<text class="st-acc" x="' + (CX - 24) + '" y="' + (yy + (alter > 0 ? 5 : 7)) + '" ' +
-        'font-size="34">' + sym + '</text>';
+      out += '<text class="st-acc" x="' + (c - 24 * k) + '" y="' + (yy + (alter > 0 ? 5 : 7)) + '" ' +
+        'font-size="' + (34 * k) + '">' + sym + '</text>';
     }
     // piccola etichetta opzionale (usata solo in modalità riferimento)
     if (opt && opt.label) {
@@ -144,6 +151,85 @@ window.Staff = (function () {
     el.innerHTML = build(o);
   }
 
+  /* ======================================================== partitura ===== */
+  /* Tutto il brano su più righe, come uno spartito vero: la nota da indovinare
+     è evidenziata, quelle già fatte sono in verde e le altre restano leggibili,
+     così si vede il contesto (le note prima e quelle dopo). */
+  const PS = 14;          // spazio righe nella partitura (più compatto)
+  const PW = 920;         // larghezza di una riga
+  const PH = 200;         // altezza di una riga
+  const PBOTTOM = 122;    // y della 1ª riga
+  const PPERRIGA = 12;    // note per riga
+
+  function partituraRighe(notes, o) {
+    const gruppi = [];
+    for (let i = 0; i < notes.length; i += PPERRIGA) {
+      gruppi.push(notes.slice(i, i + PPERRIGA).map(function (n, k) { return { nota: n, i: i + k }; }));
+    }
+    const xInizio = 130, xFine = PW - 40;
+    const ky = PS / S;                     // la partitura è più piccola
+    return gruppi.map(function (gruppo, riga) {
+      const yDi = function (step) { return PBOTTOM - step * (PS / 2); };
+      let out = '';
+      for (let i = 0; i < 5; i++) {
+        const yy = PBOTTOM - i * PS;
+        out += '<line class="st-line" x1="' + 22 + '" y1="' + yy + '" x2="' + (PW - 22) + '" y2="' + yy + '"/>';
+      }
+      // chiave, scalata e allineata alla riga del Sol di questa riga
+      const kc = PS / 590.5;
+      out += '<g class="st-clef" transform="translate(' + (30 - kc * 1186).toFixed(3) + ',' +
+        ((PBOTTOM - PS) - kc * 8149).toFixed(3) + ') scale(' + kc.toFixed(8) + ')">' +
+        '<path d="' + CHIAVE_D + '"/></g>';
+      gruppo.forEach(function (voce, i) {
+        const n = voce.nota;
+        const step = T.staffStep(n);
+        const cx = gruppo.length === 1 ? xInizio
+          : xInizio + (xFine - xInizio) * (i / (gruppo.length - 1));
+        const yy = yDi(step);
+        if (step >= 10) for (let v = 10; v <= step; v += 2) {
+          out += '<line class="st-ledger" x1="' + (cx - 14) + '" y1="' + yDi(v) + '" x2="' + (cx + 14) +
+            '" y2="' + yDi(v) + '"/>';
+        }
+        if (step <= -2) for (let v = -2; v >= step; v -= 2) {
+          out += '<line class="st-ledger" x1="' + (cx - 14) + '" y1="' + yDi(v) + '" x2="' + (cx + 14) +
+            '" y2="' + yDi(v) + '"/>';
+        }
+        const attuale = voce.i === o.indice;
+        const fatta = voce.i < o.fatte;
+        const alto = step < 4;
+        const sx = alto ? cx + 6.6 : cx - 6.6;
+        const sy2 = alto ? yy - 2.6 * PS : yy + 2.6 * PS;
+        if (attuale) out += '<circle class="st-evidenza" cx="' + cx + '" cy="' + yy + '" r="13"/>';
+        out += '<ellipse class="st-head' + (fatta ? ' st-fatta' : '') + (attuale ? ' st-attuale' : '') +
+          '" cx="' + cx + '" cy="' + yy + '" rx="6.7" ry="4.8" transform="rotate(-20 ' + cx + ' ' + yy + ')"/>';
+        out += '<line class="st-stem' + (fatta ? ' st-fatta' : '') + (attuale ? ' st-attuale' : '') +
+          '" x1="' + sx + '" y1="' + yy + '" x2="' + sx + '" y2="' + sy2 + '"/>';
+        if (n.alter) {
+          const sym = n.alter > 0 ? '\u266F' : '\u266D';
+          out += '<text class="st-acc' + (attuale ? ' st-attuale' : '') + '" x="' + (cx - 17) + '" y="' +
+            (yy + 5) + '" font-size="24">' + sym + '</text>';
+        }
+      });
+      return '<svg class="staff-svg partitura-riga" viewBox="0 0 ' + PW + ' ' + PH + '" ' +
+        'preserveAspectRatio="xMidYMid meet" role="img" aria-label="Brano, riga ' + (riga + 1) + '">' +
+        out + '</svg>';
+    }).join('');
+  }
+
+  /**
+   * Lo spartito completo del brano.
+   * @param {object} o {note:[note], indice: n, fatte: n, aria: string}
+   */
+  function buildPartitura(o) {
+    o = o || {};
+    return '<div class="partitura">' + partituraRighe((o.note || []).filter(Boolean), o) + '</div>';
+  }
+
+  function renderPartituraTo(el, o) {
+    if (!el) return;
+    el.innerHTML = buildPartitura(o);
+  }
+
   /** Pentagramma vuoto con la chiave: utile per le anteprime/lo sfondo. */
   function empty(o) {
     o = o || {};
@@ -154,7 +240,10 @@ window.Staff = (function () {
   return {
     renderTo: renderTo,
     build: build,
+    buildPartitura: buildPartitura,
+    renderPartituraTo: renderPartituraTo,
     empty: empty,
-    X0: X0, X1: X1, BOTTOM: BOTTOM, CX: CX, S: S, W: W, H: H
+    X0: X0, X1: X1, BOTTOM: BOTTOM, CX: CX, S: S, W: W, H: H,
+    PPERRIGA: PPERRIGA
   };
 })();

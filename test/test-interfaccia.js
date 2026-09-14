@@ -107,6 +107,16 @@ if (!CHROME) {
     return r.result.value;
   }
 
+  /** Aspetta che una condizione nella pagina diventi vera (invece di un'attesa fissa). */
+  async function attendiStato(condizione, maxMs) {
+    const fine = Date.now() + (maxMs || 10000);
+    while (Date.now() < fine) {
+      if (await valuta('return !!(' + condizione + ');') === true) return true;
+      await attesa(200);
+    }
+    return false;
+  }
+
   /** Click vero del mouse al centro dell'elemento (passa dal controllo di sovrapposizione). */
   async function clickVero(selettore) {
     const p = await valuta(
@@ -205,7 +215,8 @@ if (!CHROME) {
     await clickVero('#s-inizia');
     await attesa(400);
     check('conto alla rovescia visibile', await valuta('return getComputedStyle(document.getElementById("overlay")).display;'), 'grid');
-    await attesa(3000);
+    await attendiStato('window.App && App.sessione', 12000);
+    await attesa(300);
     check('velo sparito dopo il conto', await valuta('return getComputedStyle(document.getElementById("overlay")).display;'), 'none');
     check('schermata del turno', await valuta('return App.sessione.fase;'), 'turno');
     await clickVero('#btn-turno');
@@ -232,7 +243,7 @@ if (!CHROME) {
     await invia('Page.navigate', { url: URL_APP });
     await attesa(1000);
     await clickVero('[data-modo="tempo"]');
-    await attesa(3600);                                   // conto alla rovescia
+    await attendiStato('window.App && App.sessione && App.sessione.fase === "domanda"', 12000);
     for (let i = 0; i < 3; i++) {                          // tre errori di proposito
       await valuta('var s=App.sessione,q=s.domanda,m=Theory.midi(q.nota);' +
         'var b=Array.from(document.querySelectorAll("#screen-play .tasto-nota")).filter(function(e){' +
@@ -399,10 +410,32 @@ if (!CHROME) {
       'var s=App.sessione; return [1,2,3].map(function(i){ s.indice=i-1; return Theory.solfege(s.creaDomanda().nota); }).join(",");'),
       'Do,Re,Mi');
     check('il totale è quello del brano', await valuta('return App.sessione.totale;'), 32);
-    const primaNota = await valuta('return Theory.solfege(App.sessione.domanda.nota);');
+    check('si vede tutto lo spartito del brano', await valuta(
+      'return document.querySelectorAll("#screen-play .partitura-riga .st-head").length;'), 32);
+    check('il brano è scritto su più righe', await valuta(
+      'return document.querySelectorAll("#screen-play .partitura-riga").length;'), 3);
+    check('la nota da indovinare è evidenziata', await valuta(
+      'return document.querySelectorAll("#screen-play .st-evidenza").length;'), 1);
+    check('si vedono anche le note successive', await valuta(
+      'return document.querySelectorAll("#screen-play .st-head").length > 10;'), true);
+    check('all\'inizio nessuna nota è ancora fatta', await valuta(
+      'return document.querySelectorAll("#screen-play .st-head.st-fatta").length;'), 0);
+    const doveEvidenza = await valuta(
+      'var e=document.querySelector("#screen-play .st-evidenza");' +
+      'var righe=Array.from(document.querySelectorAll("#screen-play .partitura-riga"));' +
+      'var riga=righe.filter(function(r){return r.contains(e);})[0];' +
+      'return righe.indexOf(riga) + ":" + e.getAttribute("cx");');
     await clickVero('#screen-play .tastiera .tasto-nota:nth-child(1)');
     await attesa(500);
     check('si risponde e si avanza', await valuta('return App.sessione.storico.length;'), 1);
+    check('la nota indovinata diventa verde', await valuta(
+      'return document.querySelectorAll("#screen-play .st-head.st-fatta").length >= 1;'), true);
+    ok('l\'evidenziazione passa alla nota dopo', (await valuta(
+      'var e=document.querySelector("#screen-play .st-evidenza");' +
+      'var righe=Array.from(document.querySelectorAll("#screen-play .partitura-riga"));' +
+      'var riga=righe.filter(function(r){return r.contains(e);})[0];' +
+      'return righe.indexOf(riga) + ":" + e.getAttribute("cx");')) !== doveEvidenza,
+      'prima ' + doveEvidenza);
     await clickVero('#btn-esci');
     await attesa(400);
 

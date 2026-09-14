@@ -517,6 +517,20 @@ body[data-lingua="en"] [data-lingua-solo="it"] { display: none !important; }
 .brano-nota.ok { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
 .brano-nota.ko { background: var(--ko-bg); border-color: var(--ko); color: var(--ko); }
 .brano-nota.attuale { outline: 2px solid var(--oro); }
+.brano-passo { font-size: 13px; color: var(--ink-3); font-weight: 600; }
+
+/* Lo spartito intero del brano: la nota da indovinare è evidenziata, quelle
+   già fatte sono verdi, tutte le altre restano leggibili. */
+.partitura-wrap { width: 100%; max-height: 44vh; overflow-y: auto; background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--raggio); padding: 8px 12px;
+  box-shadow: var(--ombra-2); }
+.partitura { display: block; }
+.partitura-riga { width: 100%; height: auto; display: block; margin-bottom: 4px; }
+.partitura-riga:last-child { margin-bottom: 0; }
+.st-evidenza { fill: color-mix(in srgb, var(--oro) 28%, transparent); stroke: var(--oro); stroke-width: 2; }
+.st-head.st-fatta, .st-stem.st-fatta { fill: var(--ok); stroke: var(--ok); }
+.st-head.st-attuale, .st-stem.st-attuale { fill: var(--legno); stroke: var(--legno); }
+.st-acc.st-attuale { fill: var(--legno); }
 
 /* ------------------------------------------------------- violin hero ----- */
 .eroe-wrap { display: flex; flex-direction: column; gap: 10px; }

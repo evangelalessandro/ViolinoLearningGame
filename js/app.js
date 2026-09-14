@@ -682,19 +682,25 @@
         (rivela ? '<div class="staff-wrap piccolo">' + Staff.build({ notes: [q.nota] }) + '</div>' : '') +
         '</div>';
     } else {
-      // pentagramma: da solo, oppure con l'intestazione del brano in lavorazione
+      // pentagramma: da solo, oppure tutto il brano con la nota da indovinare
+      // evidenziata (si vedono anche le note prima e dopo)
       if (q.tipo === 'brano' && s.brano) {
-        const fatte = s.storico || [];
         palco = '<div class="card brano-testa">' +
           '<div class="brano-nome">' + esc(Brani.titolo(s.brano)) +
           ' <small>' + esc(Brani.autore(s.brano)) + '</small></div>' +
-          '<div class="brano-riga-note">' + fatte.map(function (v, i) {
-            const cls = v.corretto ? 'ok' : 'ko';
-            return '<span class="brano-nota ' + cls + (i === fatte.length - 1 ? ' attuale' : '') + '">' +
-              T.solfege(v.nota) + '</span>';
-          }).join('') + '</div>' +
+          '<div class="brano-riga-note">' +
+          '<span class="brano-passo">' + t('gioco.domanda') + ' ' + Math.min(s.indice + 1, s.totale) +
+          '/' + s.totale + '</span>' +
           '<button class="btn piccolo" id="btn-sentibrano">🎧 ' + t('brani.ascolta') + '</button>' +
-          '</div>' + '<div class="staff-wrap">' + Staff.build({ notes: [q.nota] }) + '</div>';
+          '</div>' +
+          '</div>' +
+          '<div class="partitura-wrap" id="partitura-wrap">' +
+          Staff.buildPartitura({
+            note: Brani.noteDi(s.brano),
+            indice: s.indice,
+            fatte: (s.storico || []).length
+          }) +
+          '</div>';
       } else {
         palco = '<div class="staff-wrap">' + Staff.build({ notes: [q.nota] }) + '</div>';
       }
@@ -726,6 +732,17 @@
     if (ba) ba.addEventListener('click', function () { s.riproduci(q); });
     const bs = el('btn-sentibrano');
     if (bs) bs.addEventListener('click', function () { ascoltaBrano(s.brano); });
+    // lo spartito scorre da solo fino alla nota da indovinare
+    const pw = el('partitura-wrap');
+    if (pw) {
+      const ev = pw.querySelector('.st-evidenza');
+      if (ev) {
+        const r = ev.getBoundingClientRect(), w = pw.getBoundingClientRect();
+        if (r.top < w.top || r.bottom > w.bottom) {
+          pw.scrollTop += (r.top - w.top) - w.height / 3;
+        }
+      }
+    }
     wireTastiera(s, 0);
     el('btn-esci').addEventListener('click', function () { esci(); });
     agganciaPulsanteErrori(sc);
