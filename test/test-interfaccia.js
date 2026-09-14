@@ -189,8 +189,8 @@ if (!CHROME) {
     await clickVero('[data-modo="leggi"]');
     await attesa(700);
     check('partita avviata', await valuta('return App.sessione && App.sessione.fase;'), 'domanda');
-    check('opzione cliccabile', await sopra('#screen-play .opzioni .opt'), 'libero');
-    await clickVero('#screen-play .opzioni .opt:nth-child(1)');
+    check('opzione cliccabile', await sopra('#screen-play .tastiera .tasto-nota'), 'libero');
+    await clickVero('#screen-play .tastiera .tasto-nota:nth-child(1)');
     await attesa(400);
     check('click registrato', await valuta('return App.sessione.storico.length;'), 1);
     await clickVero('#btn-esci');
@@ -211,7 +211,7 @@ if (!CHROME) {
     await clickVero('#btn-turno');
     await attesa(500);
     check('turno iniziato', await valuta('return App.sessione.fase;'), 'domanda');
-    check('opzioni del turno cliccabili', await sopra('#screen-play .opzioni .opt'), 'libero');
+    check('opzioni del turno cliccabili', await sopra('#screen-play .tastiera .tasto-nota'), 'libero');
 
     console.log('── Click veri su telefono ' + '─'.repeat(40));
     await invia('Emulation.setDeviceMetricsOverride', { width: 390, height: 780, deviceScaleFactor: 2, mobile: true });
@@ -234,8 +234,10 @@ if (!CHROME) {
     await clickVero('[data-modo="tempo"]');
     await attesa(3600);                                   // conto alla rovescia
     for (let i = 0; i < 3; i++) {                          // tre errori di proposito
-      await valuta('var s=App.sessione,q=s.domanda,o=document.querySelectorAll("#screen-play .opt");' +
-        'o[(q.indiceGiusto+1)%o.length].click(); return true;');
+      await valuta('var s=App.sessione,q=s.domanda,m=Theory.midi(q.nota);' +
+        'var b=Array.from(document.querySelectorAll("#screen-play .tasto-nota")).filter(function(e){' +
+        '  return +e.getAttribute("data-midi")!==m; })[0];' +
+        'b.click(); return true;');
       await attesa(1150);
     }
     check('errori contati nel pulsante', await valuta('return document.querySelector("#btn-errori .contatore").textContent;'), '3');
@@ -322,14 +324,14 @@ if (!CHROME) {
     console.log('── Note in inglese nel gioco ' + '─'.repeat(34));
     await clickVero('[data-modo="leggi"]');
     await attesa(700);
-    check('opzioni con lettere', await valuta(
-      'var n=Array.from(document.querySelectorAll("#screen-play .opt-nome")).map(function(e){return e.textContent;});' +
-      'return n.length===4 && n.every(function(x){return /^[A-G][♯♭]?$/.test(x);});'), true);
+    check('tastiera con lettere', await valuta(
+      'var n=Array.from(document.querySelectorAll("#screen-play .tn-nome")).map(function(e){return e.textContent;});' +
+      'return n.length===7 && n.every(function(x){return /^[A-G][♯♭]?$/.test(x);});'), true);
     check('nessun nome italiano fra le opzioni', await valuta(
-      'var n=Array.from(document.querySelectorAll("#screen-play .opt-nome")).map(function(e){return e.textContent;});' +
+      'var n=Array.from(document.querySelectorAll("#screen-play .tn-nome")).map(function(e){return e.textContent;});' +
       'return n.filter(function(x){return /Do|Re|Mi|Fa|Sol|La|Si/.test(x);}).length;'), 0);
     check('descrizione estesa in inglese', await valuta(
-      'var t=Array.from(document.querySelectorAll("#screen-play .opt")).map(function(e){return e.getAttribute("title");});' +
+      'var t=Array.from(document.querySelectorAll("#screen-play .tasto-nota")).map(function(e){return e.getAttribute("title");});' +
       'return t.every(function(x){return /^[A-G]( sharp| flat)?$/.test(x);});'), true);
     check('HUD in inglese', await valuta('return document.querySelector(".hud-k").textContent;'), 'Points');
     check('nessun errore JavaScript', await valuta('return window.__errori || [];'), []);
@@ -367,7 +369,7 @@ if (!CHROME) {
     await attesa(700);
     check('HUD di nuovo in italiano', await valuta('return document.querySelector(".hud-k").textContent;'), 'Punti');
     check('note di nuovo in italiano', await valuta(
-      'var n=Array.from(document.querySelectorAll("#screen-play .opt-nome")).map(function(e){return e.textContent;});' +
+      'var n=Array.from(document.querySelectorAll("#screen-play .tn-nome")).map(function(e){return e.textContent;});' +
       'return n.every(function(x){return /^(Do|Re|Mi|Fa|Sol|La|Si)[♯♭]?$/.test(x);});'), true);
     await clickVero('#btn-esci');
     await attesa(400);
@@ -398,7 +400,7 @@ if (!CHROME) {
       'Do,Re,Mi');
     check('il totale è quello del brano', await valuta('return App.sessione.totale;'), 32);
     const primaNota = await valuta('return Theory.solfege(App.sessione.domanda.nota);');
-    await clickVero('#screen-play .opzioni .opt:nth-child(1)');
+    await clickVero('#screen-play .tastiera .tasto-nota:nth-child(1)');
     await attesa(500);
     check('si risponde e si avanza', await valuta('return App.sessione.storico.length;'), 1);
     await clickVero('#btn-esci');
@@ -443,6 +445,48 @@ if (!CHROME) {
     check('si esce dal gioco Eroe', await valuta('return document.getElementById("screen-home").classList.contains("is-active");'), true);
     check('nessun errore JavaScript', await valuta('return window.__errori || [];'), []);
 
+    console.log('── Tastiera delle note fissa ' + '─'.repeat(36));
+    await invia('Page.navigate', { url: URL_APP });
+    await attesa(1100);
+    await clickVero('[data-modo="leggi"]');
+    await attesa(800);
+    const ordine1 = await valuta(
+      'return Array.from(document.querySelectorAll("#screen-play .tn-nome")).map(function(e){return e.textContent;}).join(" ");');
+    ok('le note sono in ordine musicale (Do Re Mi…)', ordine1 === 'Do Re Mi Fa Sol La Si', ordine1);
+    ok('i tasti numerati sono 1..7', await valuta(
+      'return Array.from(document.querySelectorAll("#screen-play .tn-tasto")).map(function(e){return e.textContent;}).join("");'),
+      '1234567');
+    // si risponde a tre domande di seguito: le note devono restare dove sono
+    for (let i = 0; i < 3; i++) {
+      await valuta(
+        'var s=App.sessione, m=Theory.midi(s.domanda.nota);' +
+        'document.querySelector(\'#screen-play .tasto-nota[data-midi="\'+m+\'"]\').click(); return true;');
+      await attesa(1200);
+    }
+    const ordine2 = await valuta(
+      'return Array.from(document.querySelectorAll("#screen-play .tn-nome")).map(function(e){return e.textContent;}).join(" ");');
+    ok('dopo tre domande le note non si sono spostate', ordine1 === ordine2, ordine2);
+    // il tasto preme la nota giusta: 1 = Do
+    await valuta('document.querySelector("#screen-play .tasto-nota").click(); return true;');
+    await attesa(400);
+    check('il primo tasto è Do', await valuta(
+      'var s=App.sessione, u=s.giocatori[0].ultimo; return u ? Theory.solfege(u.scelta || u.domanda.nota) : "nessuno";'), 'Do');
+    // con le alterazioni la tastiera si allarga ma resta ordinata
+    await clickVero('#btn-esci');
+    await attesa(400);
+    await clickVero('[data-liv="adulti"]');
+    await attesa(300);
+    await clickVero('[data-modo="leggi"]');
+    await attesa(800);
+    const ordine3 = await valuta(
+      'return Array.from(document.querySelectorAll("#screen-play .tn-nome")).map(function(e){return e.textContent;}).join(" ");');
+    ok('con le alterazioni compaiono 12 note in ordine',
+      ordine3 === 'Do Do♯ Re Re♯ Mi Fa Fa♯ Sol Sol♯ La La♯ Si', ordine3);
+    await clickVero('#btn-esci');
+    await attesa(400);
+    await clickVero('[data-liv="ragazzi"]');
+    await attesa(300);
+
     /* Nessuna scritta "undefined"/"NaN" dev'essere visibile: è il sintomo tipico
        di una proprietà scritta con un nome diverso da quello usato nell'interfaccia. */
     console.log('── Nessuna scritta "undefined" a schermo ' + '─'.repeat(25));
@@ -472,8 +516,9 @@ if (!CHROME) {
         const stato = await valuta(
           'var s=window.App&&App.sessione; if(!s) return "no";' +
           'if(s.fase==="fine") return "fine"; if(s.fase!=="domanda") return "attesa";' +
-          'var q=s.domanda, o=document.querySelectorAll("#screen-play .opzioni .opt");' +
-          'if(!q||!o.length) return "no"; o[q.indiceGiusto].click(); return "ok";');
+          'var q=s.domanda, m=Theory.midi(q.nota);' +
+          'var b=document.querySelector(\'#screen-play .tasto-nota[data-midi="\'+m+\'"]\');' +
+          'if(!q||!b) return "no"; b.click(); return "ok";');
         if (stato === 'fine') break;
         await attesa(650);
       }

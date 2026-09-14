@@ -47,6 +47,14 @@ I record personali vengono salvati nel `localStorage` del browser: non esce ness
 | 🎼 **Brani classici** | Scegli un brano famoso e indovina le sue note una per una sul pentagramma |
 | 🎸 **Violin Hero** | Le note del brano cadono: tocca la corda giusta a tempo |
 
+### La tastiera delle note
+
+Quando un gioco chiede il nome di una nota, le risposte sono una **tastiera fissa**: le stesse
+note nello stesso ordine a ogni domanda — Do Re Mi Fa Sol La Si, più i diesis quando il livello
+li usa — così si impara dove sta ogni nota invece di cercare il pulsante ogni volta. I tasti
+1…7 (fino a =) le suonano. Nelle sfide a due le risposte restano quattro, perché una
+tastiera intera non ci sta due volte su uno schermo.
+
 ### 🎼 Brani classici
 
 Si sceglie dalla libreria inclusa (js/brani.js: melodie di pubblico dominio, tutte suonabili

@@ -46,6 +46,14 @@ Personal bests are stored in the browser's `localStorage`: no data ever leaves y
 | 🎼 **Classical pieces** | Choose a famous piece and name its notes one by one from the staff |
 | 🎸 **Violin Hero** | The notes of the piece fall down: hit the right string in time |
 
+### The note keyboard
+
+When a game asks you to name a note, the answers are a **fixed keyboard**: the same notes in
+the same order for every question — Do Re Mi Fa Sol La Si, plus the sharps when the level uses
+them — so you learn where each note lives instead of hunting for the button each time. The
+keys 1…7 (up to =) play them. In the two-player games the answers are still four choices,
+because a whole keyboard does not fit twice on one screen.
+
 ### 🎼 Classical pieces
 
 Pick from the built-in library (`js/brani.js`, all public-domain melodies, all playable in

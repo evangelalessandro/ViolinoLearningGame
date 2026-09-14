@@ -8,6 +8,9 @@
   const I18n = window.I18n;
   const t = function (k, v) { return I18n.t(k, v); };
   const TASTI_LABEL = ['1', '2', '3', '4', '5', '6'];
+  /* Tasti della tastiera delle note: le posizioni non cambiano mai, così si
+     impara dove sta ogni nota invece di cercarla a ogni domanda. */
+  const TASTI_NOTA = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
   const TASTI_P1 = ['a', 's', 'd', 'f', 'g', 'h'];
   const TASTI_P2 = ['j', 'k', 'l', 'ò', 'à', 'ù'];
 
@@ -581,18 +584,58 @@
       '<div class="barra' + (critico ? ' critico' : '') + '"><i data-barra style="width:' + Math.round(barra * 100) + '%"></i></div>';
   }
 
-  function opzioniHTML(q, scelta) {
-    return '<div class="opzioni num-' + q.opzioni.length + '">' + q.opzioni.map(function (n, i) {
-      let cls = 'opt';
-      if (scelta != null) {
-        if (i === q.indiceGiusto) cls += ' giusta';
-        else if (T.midi(n) === T.midi(scelta)) cls += ' sbagliata';
+  /* ------------------------------------------------------ tastiera delle note */
+  /**
+   * Le note della tastiera: tutte quelle che possono uscire in questa partita,
+   * in ordine di altezza a partire dal Do. Sono sempre le stesse e sempre nello
+   * stesso ordine per tutta la partita.
+   */
+  function tastieraDi(s) {
+    if (s._tastiera) return s._tastiera;
+    const viste = {};
+    const aggiungi = function (n) {
+      if (!n) return;
+      const k = n.letter + '|' + n.alter;
+      if (!viste[k]) viste[k] = n;
+    };
+    T.notePool(s.chiaveLivello, s.preferFlats).forEach(aggiungi);
+    if (s.brano) s.brano.note.forEach(function (n) { aggiungi(T.daNome(n[0])); });
+    s._tastiera = Object.keys(viste).map(function (k) { return viste[k]; })
+      .sort(function (a, b) {
+        return (T.SEMI[a.letter] + a.alter) - (T.SEMI[b.letter] + b.alter);
+      });
+    return s._tastiera;
+  }
+
+  function tastieraHTML(s, q, scelta) {
+    const note = tastieraDi(s);
+    const giusto = q.nota;
+    const rivela = s.fase === 'feedback';
+    return '<div class="tastiera num-' + note.length + '">' + note.map(function (n, i) {
+      let cls = 'tasto-nota' + (n.alter ? ' alterato' : '');
+      if (rivela) {
+        if (T.midi(n) === T.midi(giusto)) cls += ' giusta';
+        else if (scelta && T.midi(n) === T.midi(scelta)) cls += ' sbagliata';
       }
-      return '<button class="' + cls + '" data-i="' + i + '"' + (scelta != null ? ' disabled' : '') +
+      return '<button class="' + cls + '" data-nota="' + i + '" data-midi="' + T.midi(n) + '"' +
+        (rivela ? ' disabled' : '') +
         ' title="' + T.solfegeEsteso(n) + '" aria-label="' + T.solfegeEsteso(n) + '">' +
-        '<span class="opt-nome">' + T.solfege(n) + '</span>' +
-        '<span class="opt-tasto">' + TASTI_LABEL[i] + '</span></button>';
+        '<span class="tn-nome">' + T.solfege(n) + '</span>' +
+        (TASTI_NOTA[i] ? '<span class="tn-tasto">' + TASTI_NOTA[i] + '</span>' : '') +
+        '</button>';
     }).join('') + '</div>';
+  }
+
+  function wireTastiera(s, giocatore) {
+    const note = tastieraDi(s);
+    const radice = document.querySelector('#screen-play .tastiera');
+    if (!radice) return;
+    radice.querySelectorAll('.tasto-nota').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const i = parseInt(b.getAttribute('data-nota'), 10);
+        rispondiNome(giocatore, note[i]);
+      });
+    });
   }
 
   function feedbackHTML(s) {
@@ -660,7 +703,7 @@
     sc.innerHTML =
       hudHTML(s) +
       '<div class="palco">' + palco + '</div>' +
-      (q.tipo === 'posizione' ? '' : opzioniHTML(q, scelta)) +
+      (q.tipo === 'posizione' ? '' : tastieraHTML(s, q, scelta)) +
       feedbackHTML(s) +
       '<div class="piede"><button class="btn ghost" id="btn-esci">' + t('gioco.esci') + '</button>' +
       pulsanteErrori(s) +
@@ -683,7 +726,7 @@
     if (ba) ba.addEventListener('click', function () { s.riproduci(q); });
     const bs = el('btn-sentibrano');
     if (bs) bs.addEventListener('click', function () { ascoltaBrano(s.brano); });
-    wireOpzioni(s, 0);
+    wireTastiera(s, 0);
     el('btn-esci').addEventListener('click', function () { esci(); });
     agganciaPulsanteErrori(sc);
   }
@@ -694,16 +737,6 @@
     return T.midi(nota) - open;
   }
 
-  function wireOpzioni(s, giocatore) {
-    const q = s.domandaDi(giocatore);
-    if (!q || !q.opzioni) return;
-    document.querySelectorAll('.opzioni .opt').forEach(function (b) {
-      b.addEventListener('click', function () {
-        const i = parseInt(b.getAttribute('data-i'), 10);
-        rispondiNome(giocatore, q.opzioni[i]);
-      });
-    });
-  }
 
   /** Si può rispondere? Nella sfida contemporanea conta lo stato del singolo giocatore. */
   function puoRispondere(s, i) {
@@ -1101,10 +1134,17 @@
 
     const q = s.domanda;
     if (!q) return;
-    if (q.opzioni && /^[1-9]$/.test(ev.key)) {
-      const i = parseInt(ev.key, 10) - 1;
-      if (q.opzioni[i]) { ev.preventDefault(); rispondiNome(0, q.opzioni[i]); }
-    } else if (ev.key === ' ' || k === 'r') {
+    // tastiera delle note: i tasti sono sempre gli stessi e nello stesso posto
+    if (q.opzioni && q.opzioni.length) {
+      const note = tastieraDi(s);
+      const i = TASTI_NOTA.indexOf(ev.key);
+      if (i >= 0 && note[i]) {
+        ev.preventDefault();
+        rispondiNome(0, note[i]);
+        return;
+      }
+    }
+    if (ev.key === ' ' || k === 'r') {
       if (q.tipo === 'orecchio') { ev.preventDefault(); s.riproduci(q); }
     } else if (ev.key === 'Enter' && s.fase === 'feedback') {
       s.prossima(0);
