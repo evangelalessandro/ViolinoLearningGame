@@ -55,6 +55,12 @@ li usa — così si impara dove sta ogni nota invece di cercare il pulsante ogni
 1…7 (fino a =) le suonano. Nelle sfide a due le risposte restano quattro, perché una
 tastiera intera non ci sta due volte su uno schermo.
 
+Ogni tasto è **una nota in una sola ottava**: Sol3 e Sol4 hanno due tasti distinti e ognuno
+mostra la sua ottava (Sol3, Do♯5), perché un Sol non è la risposta giusta a una domanda sul Sol
+un'ottava più in alto. Nei primi livelli la tastiera contiene solo le note del livello (9 tasti
+per *bambini*); quando il brano ne chiede altre (o il livello usa le alterazioni) si allunga e i
+tasti si stringono un po' per restare su una riga.
+
 ### 🎼 Brani classici
 
 Si sceglie dalla libreria inclusa (js/brani.js: melodie di pubblico dominio, tutte suonabili
@@ -228,7 +234,7 @@ node test/test-interfaccia.js     # interfaccia: click veri del mouse (serve Chr
 node test/test-audio.js           # suono: spettro del violino sintetizzato (serve Chrome)
 ```
 
-`test-motore.js` esegue ~15.800 controlli: nomi e frequenze delle note, diteggiature
+`test-motore.js` esegue ~20.700 controlli: nomi e frequenze delle note, diteggiature
 della 1ª posizione, coerenza di ogni livello (ogni nota delle domande deve essere davvero
 suonabile e avere una pallina cliccabile sul manico), generazione delle domande (una sola
 risposta giusta, opzioni con nomi tutti diversi), riconoscimento dei tipi di errore nel
@@ -239,7 +245,9 @@ più la simulazione di **tutte le 32 combinazioni gioco × livello** fino alla f
 (cioè passando dal controllo di sovrapposizione degli elementi), verificando che nessun
 velo o modale dimenticata copra l'interfaccia, che ogni pulsante risponda davvero, che il
 riepilogo degli errori si apra e metta in pausa l'orologio, che il **pulsante della lingua**
-traduca tutta l'interfaccia e i nomi delle note, e che non compaia mai la scritta
+traduca tutta l'interfaccia e i nomi delle note, che la tastiera fissa delle risposte abbia
+**un tasto distinto per ogni nota di ogni ottava** (così Sol4 risponde davvero a una domanda su
+Sol4 e non su Sol3), e che non compaia mai la scritta
 `undefined` a schermo (sintomo tipico di una proprietà scritta con un nome diverso da quello
 usato nell'interfaccia).
 Per eseguirlo serve l'app servita via HTTP:

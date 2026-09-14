@@ -442,7 +442,7 @@ window.Gioco = (function () {
     });
     esito.giusto = q.tipo === 'posizione'
       ? q.soluzioni.map(function (r) { return T.describePlacement(r.pl, r.delta); })
-      : T.solfege(q.nota);
+      : T.solfegeOttava(q.nota);
 
     if (this.modo.layout === 'race') {
       const tuttiBloccati = this.giocatori.every(function (x) { return x.bloccato; });

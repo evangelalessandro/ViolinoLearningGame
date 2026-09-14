@@ -54,6 +54,12 @@ them — so you learn where each note lives instead of hunting for the button ea
 keys 1…7 (up to =) play them. In the two-player games the answers are still four choices,
 because a whole keyboard does not fit twice on one screen.
 
+Every key is **one note in one octave**: the keyboard has a separate key for G3 and G4, and
+each key shows its octave (`G3`, `C♯5`), because a G is not an answer to a question about the
+G one octave higher. On the first levels the keyboard holds just the notes of the level
+(9 keys for *kids*); when a piece needs more (or the level uses accidentals) it grows and the
+keys shrink a little to stay on one row.
+
 ### 🎼 Classical pieces
 
 Pick from the built-in library (`js/brani.js`, all public-domain melodies, all playable in
@@ -223,7 +229,7 @@ node test/test-interfaccia.js     # interface: real mouse clicks (needs Chrome)
 node test/test-audio.js           # sound: spectrum of the synthesised violin (needs Chrome)
 ```
 
-`test-motore.js` runs ~15,800 checks: note names and frequencies, 1st-position fingerings,
+`test-motore.js` runs ~20,700 checks: note names and frequencies, 1st-position fingerings,
 consistency of every level (every note asked must really be playable and have a clickable dot
 on the fingerboard), question generation (one right answer only, options with distinct names),
 recognition of the mistake types in the review, the **pause** (the clock does not tick while
@@ -232,7 +238,9 @@ you read), and a simulation of **all 32 game × level combinations** played to t
 `test-interfaccia.js` opens the app in headless Chrome and uses it with **real mouse events**
 (so it goes through element hit-testing), checking that no forgotten veil or modal covers the
 interface, that every button really responds, that the mistakes review opens and pauses the
-clock, that the **language button** translates the whole interface and the note names, and
+clock, that the **language button** translates the whole interface and the note names, that the
+fixed answer keyboard has a **separate key for each note in each octave** (so G4 really answers
+a question about G4 and not about G3), and
 that the word `undefined` never appears on screen (the classic symptom of a property spelled
 differently in the interface than where it is defined). It needs the app served over HTTP:
 

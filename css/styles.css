@@ -476,10 +476,17 @@ body[data-lingua="en"] [data-lingua-solo="it"] { display: none !important; }
 /* Le note stanno sempre nello stesso ordine: si impara la posizione invece di
    cercare il pulsante a ogni domanda. */
 .tastiera { display: grid; gap: 8px; width: 100%; max-width: 760px; margin: 0 auto;
-  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); }
+  grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); }
 .tastiera.num-6 { grid-template-columns: repeat(3, 1fr); }
-.tastiera.num-7, .tastiera.num-8, .tastiera.num-9 { grid-template-columns: repeat(4, 1fr); }
-.tastiera.num-10, .tastiera.num-11, .tastiera.num-12 { grid-template-columns: repeat(6, 1fr); }
+.tastiera.num-7, .tastiera.num-8, .tastiera.num-9 { grid-template-columns: repeat(5, 1fr); }
+.tastiera.num-10, .tastiera.num-11, .tastiera.num-12, .tastiera.num-13, .tastiera.num-14 {
+  grid-template-columns: repeat(7, 1fr); }
+/* con tutte le ottave e le alterazioni i tasti sono tanti: si stringono */
+.tastiera.compatta { grid-template-columns: repeat(7, 1fr); gap: 6px; max-width: 820px; }
+.tastiera.compatta .tasto-nota { padding: 9px 4px; border-radius: 10px; border-bottom-width: 3px; }
+.tastiera.compatta .tn-nome { font-size: 15px; }
+.tastiera.compatta .tn-ottava { font-size: 9px; }
+.tastiera.compatta .tn-tasto { top: 2px; right: 4px; font-size: 9px; }
 .tasto-nota {
   font: inherit; cursor: pointer; position: relative; padding: 14px 8px; border-radius: 13px;
   border: 2px solid var(--line); border-bottom-width: 4px; background: var(--panel);
@@ -488,6 +495,8 @@ body[data-lingua="en"] [data-lingua-solo="it"] { display: none !important; }
 .tasto-nota:hover:not(:disabled) { border-color: var(--legno-2); transform: translateY(-2px); }
 .tasto-nota:disabled { cursor: default; }
 .tn-nome { font-size: 20px; font-weight: 700; display: block; }
+.tn-ottava { font-size: 11px; font-weight: 700; color: var(--ink-3); vertical-align: super;
+  margin-left: 1px; }
 .tn-tasto { position: absolute; top: 4px; right: 7px; font-size: 10px; font-weight: 700;
   color: var(--ink-3); }
 .tasto-nota.alterato { background: var(--bg-2); }

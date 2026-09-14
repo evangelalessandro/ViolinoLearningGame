@@ -244,6 +244,12 @@ if (!CHROME) {
     await attesa(1000);
     await clickVero('[data-modo="tempo"]');
     await attendiStato('window.App && App.sessione && App.sessione.fase === "domanda"', 12000);
+    /* Se la sessione non fosse nuova (o l'orologio già scaduto) gli errori qui
+       sotto finirebbero su una partita finita e il test fallirebbe altrove,
+       in modo poco comprensibile: meglio accorgersene subito. */
+    check('la sfida a tempo parte da zero errori', await valuta(
+      'return App.sessione.giocatori[0].sbagli === 0 && App.sessione.inPausa === false &&' +
+      ' App.sessione.fase === "domanda" && App.sessione.tempo > 50;'), true);
     for (let i = 0; i < 3; i++) {                          // tre errori di proposito
       await valuta('var s=App.sessione,q=s.domanda,m=Theory.midi(q.nota);' +
         'var b=Array.from(document.querySelectorAll("#screen-play .tasto-nota")).filter(function(e){' +
@@ -337,13 +343,13 @@ if (!CHROME) {
     await attesa(700);
     check('tastiera con lettere', await valuta(
       'var n=Array.from(document.querySelectorAll("#screen-play .tn-nome")).map(function(e){return e.textContent;});' +
-      'return n.length===7 && n.every(function(x){return /^[A-G][♯♭]?$/.test(x);});'), true);
+      'return n.length===13 && n.every(function(x){return /^[A-G][♯♭]?[0-9]$/.test(x);});'), true);
     check('nessun nome italiano fra le opzioni', await valuta(
       'var n=Array.from(document.querySelectorAll("#screen-play .tn-nome")).map(function(e){return e.textContent;});' +
       'return n.filter(function(x){return /Do|Re|Mi|Fa|Sol|La|Si/.test(x);}).length;'), 0);
     check('descrizione estesa in inglese', await valuta(
       'var t=Array.from(document.querySelectorAll("#screen-play .tasto-nota")).map(function(e){return e.getAttribute("title");});' +
-      'return t.every(function(x){return /^[A-G]( sharp| flat)?$/.test(x);});'), true);
+      'return t.every(function(x){return /^[A-G]( sharp| flat)? [0-9]$/.test(x);});'), true);
     check('HUD in inglese', await valuta('return document.querySelector(".hud-k").textContent;'), 'Points');
     check('nessun errore JavaScript', await valuta('return window.__errori || [];'), []);
 
@@ -381,7 +387,7 @@ if (!CHROME) {
     check('HUD di nuovo in italiano', await valuta('return document.querySelector(".hud-k").textContent;'), 'Punti');
     check('note di nuovo in italiano', await valuta(
       'var n=Array.from(document.querySelectorAll("#screen-play .tn-nome")).map(function(e){return e.textContent;});' +
-      'return n.every(function(x){return /^(Do|Re|Mi|Fa|Sol|La|Si)[♯♭]?$/.test(x);});'), true);
+      'return n.every(function(x){return /^(Do|Re|Mi|Fa|Sol|La|Si)[♯♭]?[0-9]$/.test(x);});'), true);
     await clickVero('#btn-esci');
     await attesa(400);
 
@@ -485,10 +491,29 @@ if (!CHROME) {
     await attesa(800);
     const ordine1 = await valuta(
       'return Array.from(document.querySelectorAll("#screen-play .tn-nome")).map(function(e){return e.textContent;}).join(" ");');
-    ok('le note sono in ordine musicale (Do Re Mi…)', ordine1 === 'Do Re Mi Fa Sol La Si', ordine1);
-    ok('i tasti numerati sono 1..7', await valuta(
+    const nomiTasti = 'return Array.from(document.querySelectorAll("#screen-play .tasto-nota"))' +
+      '.map(function(e){var n=e.querySelector(".tn-nome"); return n?n.textContent:e.textContent;}).join(" ");';
+    ok('le note sono in ordine di altezza (con l\'ottava)',
+      ordine1 === 'Sol3 La3 Si3 Do4 Re4 Mi4 Fa4 Sol4 La4 Si4 Do5 Re5 Mi5', ordine1);
+    ok('i tasti numerati sono 1..9', await valuta(
       'return Array.from(document.querySelectorAll("#screen-play .tn-tasto")).map(function(e){return e.textContent;}).join("");'),
-      '1234567');
+      '123456789');
+    /* Il caso che dava la risposta sbagliata: Mi4 e Mi5 devono essere due tasti
+       diversi, e il tasto Mi5 deve rispondere Mi5 (non Mi4). */
+    check('Mi4 e Mi5 sono due tasti distinti', await valuta(
+      'var t=Array.from(document.querySelectorAll("#screen-play .tasto-nota"));' +
+      'var a=t.filter(function(e){return e.textContent.indexOf("Mi4")===0;});' +
+      'var b=t.filter(function(e){return e.textContent.indexOf("Mi5")===0;});' +
+      'return [a.length, b.length, a[0].getAttribute("data-midi"), b[0].getAttribute("data-midi")].join("|");'),
+      '1|1|64|76');
+    check('premendo Mi5 la risposta è Mi5', await valuta(
+      'var s=App.sessione;' +
+      'var b=Array.from(document.querySelectorAll("#screen-play .tasto-nota"))' +
+      '  .filter(function(e){return e.textContent.indexOf("Mi5")===0;})[0];' +
+      'b.click();' +
+      'var v=s.storico[s.storico.length-1];' +
+      'return v && v.risposta ? Theory.solfegeOttava(v.risposta) : "nessuna";'), 'Mi5');
+    await attesa(1000);
     // si risponde a tre domande di seguito: le note devono restare dove sono
     for (let i = 0; i < 3; i++) {
       await valuta(
@@ -502,8 +527,8 @@ if (!CHROME) {
     // il tasto preme la nota giusta: 1 = Do
     await valuta('document.querySelector("#screen-play .tasto-nota").click(); return true;');
     await attesa(400);
-    check('il primo tasto è Do', await valuta(
-      'var s=App.sessione, u=s.giocatori[0].ultimo; return u ? Theory.solfege(u.scelta || u.domanda.nota) : "nessuno";'), 'Do');
+    ok('il primo tasto è Sol3', await valuta(
+      'var s=App.sessione, u=s.giocatori[0].ultimo; return u ? Theory.solfegeOttava(u.scelta || u.domanda.nota) : "nessuno";'), 'Sol3');
     // con le alterazioni la tastiera si allarga ma resta ordinata
     await clickVero('#btn-esci');
     await attesa(400);
@@ -511,10 +536,10 @@ if (!CHROME) {
     await attesa(300);
     await clickVero('[data-modo="leggi"]');
     await attesa(800);
-    const ordine3 = await valuta(
-      'return Array.from(document.querySelectorAll("#screen-play .tn-nome")).map(function(e){return e.textContent;}).join(" ");');
-    ok('con le alterazioni compaiono 12 note in ordine',
-      ordine3 === 'Do Do♯ Re Re♯ Mi Fa Fa♯ Sol Sol♯ La La♯ Si', ordine3);
+    const ordine3 = await valuta(nomiTasti);
+    ok('con le alterazioni compaiono 26 tasti in ordine (tutte le ottave)',
+      ordine3 === 'Sol3 Sol♯3 La3 La♯3 Si3 Do4 Do♯4 Re4 Re♯4 Mi4 Fa4 Fa♯4 Sol4 Sol♯4 ' +
+        'La4 La♯4 Si4 Do5 Do♯5 Re5 Re♯5 Mi5 Fa5 Fa♯5 Sol5 Sol♯5', ordine3);
     await clickVero('#btn-esci');
     await attesa(400);
     await clickVero('[data-liv="ragazzi"]');

@@ -592,26 +592,34 @@
    */
   function tastieraDi(s) {
     if (s._tastiera) return s._tastiera;
-    const viste = {};
+    /* Una pallina per OGNI altezza, non per ogni nome: Mi4 e Mi5 sono due note
+       diverse e devono avere due tasti, altrimenti una delle due non si può
+       mai indovinare. Sono ordinate per altezza crescente. */
+    const perAltezza = {};
     const aggiungi = function (n) {
       if (!n) return;
-      const k = n.letter + '|' + n.alter;
-      if (!viste[k]) viste[k] = n;
+      const k = T.midi(n);
+      if (perAltezza[k] == null) perAltezza[k] = n;
     };
     T.notePool(s.chiaveLivello, s.preferFlats).forEach(aggiungi);
     if (s.brano) s.brano.note.forEach(function (n) { aggiungi(T.daNome(n[0])); });
-    s._tastiera = Object.keys(viste).map(function (k) { return viste[k]; })
-      .sort(function (a, b) {
-        return (T.SEMI[a.letter] + a.alter) - (T.SEMI[b.letter] + b.alter);
-      });
+    s._tastiera = Object.keys(perAltezza).map(function (k) { return perAltezza[k]; })
+      .sort(function (a, b) { return T.midi(a) - T.midi(b); });
     return s._tastiera;
+  }
+
+  /** Nome con l'ottava, con il numero piccolo in alto: Mi4, Fa♯5… */
+  function nomeConOttava(n, classe) {
+    return '<span class="' + (classe || 'tn-nome') + '">' + T.solfege(n) +
+      '<sup class="tn-ottava">' + n.octave + '</sup></span>';
   }
 
   function tastieraHTML(s, q, scelta) {
     const note = tastieraDi(s);
     const giusto = q.nota;
     const rivela = s.fase === 'feedback';
-    return '<div class="tastiera num-' + note.length + '">' + note.map(function (n, i) {
+    const cls0 = 'tastiera num-' + note.length + (note.length > 14 ? ' compatta' : '');
+    return '<div class="' + cls0 + '">' + note.map(function (n, i) {
       let cls = 'tasto-nota' + (n.alter ? ' alterato' : '');
       if (rivela) {
         if (T.midi(n) === T.midi(giusto)) cls += ' giusta';
@@ -619,8 +627,9 @@
       }
       return '<button class="' + cls + '" data-nota="' + i + '" data-midi="' + T.midi(n) + '"' +
         (rivela ? ' disabled' : '') +
-        ' title="' + T.solfegeEsteso(n) + '" aria-label="' + T.solfegeEsteso(n) + '">' +
-        '<span class="tn-nome">' + T.solfege(n) + '</span>' +
+        ' title="' + T.solfegeEsteso(n) + ' ' + n.octave + '" aria-label="' +
+        T.solfegeEsteso(n) + ' ' + n.octave + '">' +
+        nomeConOttava(n) +
         (TASTI_NOTA[i] ? '<span class="tn-tasto">' + TASTI_NOTA[i] + '</span>' : '') +
         '</button>';
     }).join('') + '</div>';
@@ -959,9 +968,9 @@
         else if (scelta && T.midi(n) === T.midi(scelta)) cls += ' sbagliata';
       }
       return '<button class="' + cls + '" data-col="' + col + '" data-i="' + i + '"' +
-        (attesa ? ' disabled' : '') + ' title="' + T.solfegeEsteso(n) + '" ' +
-        'aria-label="' + T.solfegeEsteso(n) + '">' +
-        '<span class="opt-nome">' + T.solfege(n) + '</span>' +
+        (attesa ? ' disabled' : '') + ' title="' + T.solfegeEsteso(n) + ' ' + n.octave + '" ' +
+        'aria-label="' + T.solfegeEsteso(n) + ' ' + n.octave + '">' +
+        nomeConOttava(n, 'opt-nome') +
         '<span class="opt-tasto">' + (col === 0 ? TASTI_P1[i] : TASTI_P2[i]).toUpperCase() + '</span></button>';
     }).join('') + '</div>';
   }
@@ -984,8 +993,9 @@
           }
           return '<button class="' + cls + '" data-col="' + i + '" data-i="' + k + '"' +
             (g.bloccato || chiuso ? ' disabled' : '') +
-            ' title="' + T.solfegeEsteso(n) + '" aria-label="' + T.solfegeEsteso(n) + '">' +
-            '<span class="opt-nome">' + T.solfege(n) + '</span>' +
+            ' title="' + T.solfegeEsteso(n) + ' ' + n.octave + '" aria-label="' +
+            T.solfegeEsteso(n) + ' ' + n.octave + '">' +
+            nomeConOttava(n, 'opt-nome') +
             '<span class="opt-tasto">' + (i === 0 ? TASTI_P1[k] : TASTI_P2[k]).toUpperCase() + '</span></button>';
         }).join('') + '</div></div>';
     }).join('');
