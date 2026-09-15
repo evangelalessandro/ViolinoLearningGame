@@ -14,3 +14,7 @@ _*.js
 _*.html
 _*.txt
 _tmp/
+
+# Brani aggiunti a mano: restano sul tuo computer, non si pubblicano
+# (il modello da copiare è js/brani-locali.example.js)
+js/brani-locali.js

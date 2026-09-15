@@ -515,6 +515,8 @@ body[data-lingua="en"] [data-lingua-solo="it"] { display: none !important; }
 .brano-info { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .brano-info b { font-size: 15px; }
 .brano-info small { font-size: 12px; color: var(--ink-3); }
+/* i brani scritti a mano in js/brani-locali.js si riconoscono subito */
+.brano-info small .brano-tuo { color: var(--legno); }
 .card.brano-testa { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;
   align-items: center; max-width: 560px; width: 100%; }
 .brano-nome { font-weight: 700; font-size: 16px; }

@@ -324,6 +324,82 @@ titolo('8. Nomi delle note in inglese');
   ok(G.nomeModo(G.MODI.leggi) === 'Leggi la nota', 'gioco di nuovo in italiano');
 })();
 
+/* ------------------------------------- 8b. brani aggiunti a mano (locali) */
+titolo('8b. Brani locali scritti a mano');
+(function () {
+  const B = window.Brani;
+  const quanti = B.BRANI.length;
+  const avvisi = [];
+  const warn = console.warn;
+  console.warn = function (m) { avvisi.push(String(m)); };      // silenzio nei test
+
+  // una melodia giusta, scritta con i nomi italiani
+  ok(B.aggiungi({
+    chiave: 'prova-locale',
+    titolo: 'Prova locale',
+    autore: 'Io',
+    bpm: 72,
+    note: [['Do4', 1], ['Re4', 0.5], ['Mi4', 0.5], ['Sol4', 2]]
+  }) === true, 'un brano scritto bene viene aggiunto');
+  ok(B.BRANI.length === quanti + 1, 'la libreria cresce di uno');
+  const b = B.perChiave('prova-locale');
+  ok(!!b, 'il brano si trova per chiave');
+  ok(b.locale === true, 'il brano è segnato come locale (l\'elenco lo dice)');
+  ok(b.bpm === 72 && b.note.length === 4, 'bpm e note sono quelli scritti');
+  ok(B.titolo(b) === 'Prova locale' && B.autore(b) === 'Io', 'titolo e autore del brano locale');
+  ok(Math.abs(B.durata(b) - 4) < 1e-9, 'durata in battiti del brano locale');
+  ok(B.noteDi(b).every(function (n) { return n && typeof n.octave === 'number'; }),
+    'le note locali diventano note del modello di teoria');
+  ok(T.placementsFor(B.noteDi(b)[0], 1).length > 0, 'e sono suonabili in 1ª posizione');
+
+  // gli stessi controlli che valgono per i brani della libreria
+  ok(b.note.every(function (n) { return T.daNome(n[0]) && T.placementsFor(T.daNome(n[0]), 1).length; }),
+    'ogni nota del brano locale è suonabile in 1ª posizione');
+
+  // il gioco "Brani classici" e Violin Hero lo accettano come gli altri
+  const s = new G.Sessione({ modo: 'brano', livello: 'ragazzi', brano: 'prova-locale' });
+  ok(s.brano && s.brano.chiave === 'prova-locale', 'i giochi sul brano accettano il brano locale');
+  ok(s.totale === 4, 'le domande sono una per nota');
+  const e = new window.Eroe.Gioco({ brano: b, livello: 'ragazzi' });
+  ok(e.note.length === 4 && e.note.every(function (n) { return e.corsie.indexOf(n.corda) >= 0; }),
+    'Violin Hero costruisce le corsie anche per un brano locale');
+
+  // brani sbagliati: rifiutati con un avviso, senza rompere niente
+  const sbagliati = [
+    [{ chiave: 'x1', note: [['H4', 1]] }, 'nota inesistente'],
+    [{ chiave: 'x2', note: [['Do2', 1]] }, 'nota troppo bassa (fuori 1ª posizione)'],
+    [{ chiave: 'x3', note: [['La7', 1]] }, 'nota troppo acuta'],
+    [{ chiave: 'x4', note: [] }, 'nessuna nota'],
+    [{ titolo: 'senza chiave', note: [['Do4', 1]] }, 'senza chiave'],
+    [{ chiave: 'prova-locale', note: [['Do4', 1]] }, 'chiave già usata'],
+    [null, 'non è un brano']
+  ];
+  sbagliati.forEach(function (c) {
+    ok(B.aggiungi(c[0]) === false, 'rifiutato: ' + c[1]);
+  });
+  ok(B.BRANI.length === quanti + 1, 'i brani rifiutati non entrano nella libreria');
+  ok(avvisi.length === sbagliati.length &&
+    avvisi.every(function (m) { return /Brani locali/.test(m); }),
+    'ogni rifiuto spiega il motivo nella console (' + avvisi.length + ' avvisi)');
+  ok(avvisi.some(function (m) { return /H4/.test(m); }) &&
+    avvisi.some(function (m) { return /Do2/.test(m); }),
+    'l\'avviso dice quali note correggere');
+
+  // durata mancante o assurda: si aggiusta, non si rompe
+  ok(B.aggiungi({ chiave: 'x5', note: [['Do4'], ['Re4', 0], ['Mi4', -2]] }) === true,
+    'durate mancanti o sbagliate non impediscono l\'aggiunta');
+  const x5 = B.perChiave('x5');
+  ok(x5.note.every(function (n) { return n[1] === 1; }), 'le durate non valide diventano un battito');
+  ok(B.perChiave('x5').bpm === 90, 'senza bpm si usa 90');
+
+  // si mette tutto a posto: la libreria torna come prima
+  B.BRANI.splice(B.BRANI.indexOf(b), 1);
+  B.BRANI.splice(B.BRANI.indexOf(x5), 1);
+  console.warn = warn;
+  ok(B.BRANI.length === quanti, 'la libreria resta quella di partenza dopo i test');
+  ok(!B.BRANI.some(function (x) { return x.locale; }), 'nessun brano di prova resta nell\'elenco');
+})();
+
 /* ------------------------------------------------- 9. Violin Hero (eroe) */
 titolo('9. Violin Hero: caduta delle note e punteggi');
 (function () {

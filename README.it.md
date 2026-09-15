@@ -80,6 +80,33 @@ Si può **ascoltare tutto il brano** prima di cominciare (con il suo ritmo); poi
 sue note una per una sul pentagramma: dai il nome, la senti suonare e vedi la melodia crescere
 nota dopo nota in alto nello schermo. Gli errori finiscono nel riepilogo come negli altri giochi.
 
+#### Aggiungere un brano tuo (fuori dal repository)
+
+I brani che aggiungi tu stanno in **`js/brani-locali.js`**, un file che **git ignora**: resta sul
+tuo computer e non finisce mai su GitHub. Si parte dal modello `js/brani-locali.example.js`
+(copialo con il nome `js/brani-locali.js`), si scrivono le note e si ricarica la pagina: i tuoi
+brani compaiono in fondo all'elenco, segnati con "tuo", sia in *Brani classici* sia in
+*Violin Hero*.
+
+```js
+window.Brani.aggiungi({
+  chiave: 'mio-brano',                                // nome corto, senza spazi
+  titolo: 'Il mio brano',                             // come compare nell'elenco
+  autore: 'Io',
+  bpm: 76,                                            // si può cambiare mentre giochi
+  note: [['Mi4', 1], ['Sol4', 1], ['La4', 2]]         // [nota, battiti]
+});
+```
+
+Le note si possono scrivere all'italiana (`Do4`, `Fa#4`) o all'inglese (`C4`, `F#4`); i
+riferimenti per il violino sono Sol3/Re4/La4/Mi5 (le quattro corde a vuoto) e Do4 per il Do
+centrale, e tutto deve restare fra Sol3 e Do6 in 1ª posizione: una nota non suonabile fa
+**rifiutare** il brano con un avviso nella console (F12), invece di rompere i giochi.
+
+> ⚠ **Diritto d'autore**: ci vanno solo melodie di pubblico dominio o che hai il diritto di
+> usare. Le melodie ancora protette (per esempio la maggior parte dei canti liturgici moderni)
+> non vanno pubblicate — tenerle in questo file locale serve esattamente a questo.
+
 ### 🎸 Violin Hero
 
 Le note del brano scelto cadono verso una linea, ognuna nella corsia della corda su cui si
@@ -219,6 +246,7 @@ js/audio.js           sintesi del violino (Web Audio), effetti, accordatura
 js/staff.js           disegno del pentagramma in chiave di violino (SVG)
 js/violin.js          manico del violino interattivo (SVG)
 js/brani.js           brani di pubblico dominio per i due giochi musicali
+js/brani-locali.example.js   modello per le tue melodie (non pubblicate, vedi sopra)
 js/games.js           motore di gioco: domande, punteggi, tempi, turni (nessun DOM)
 js/eroe.js            motore di Violin Hero: note che cadono, tempi e punteggi
 js/app.js             interfaccia, schermate, collegamento con il motore

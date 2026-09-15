@@ -368,6 +368,27 @@
     partePartita(chiave, {});
   }
 
+  /**
+   * Carica le melodie scritte a mano in `js/brani-locali.js`: è un file che non
+   * sta nel repository (vedi `js/brani-locali.example.js`), quindi se non c'è
+   * si gioca con la libreria e basta, senza errori a schermo.
+   */
+  function caricaBraniLocali() {
+    const src = 'js/brani-locali.js';
+    const inietta = function () {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onerror = function () { s.remove(); };
+      document.head.appendChild(s);
+    };
+    // da file:// non si può interrogare il server: si prova e basta
+    if (location.protocol === 'file:' || typeof fetch !== 'function') { inietta(); return; }
+    fetch(src, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (testo) { if (testo && testo.trim()) inietta(); })
+      .catch(function () { /* nessun brano locale: va bene così */ });
+  }
+
   /** Fa ascoltare tutto il brano, con il suo ritmo. */
   function ascoltaBrano(b) {
     if (typeof Sound === 'undefined' || !b) return;
@@ -396,7 +417,8 @@
         return '<div class="brano-riga">' +
           '<div class="brano-info"><b>' + esc(Brani.titolo(b)) + '</b>' +
           '<small>' + esc(Brani.autore(b)) + ' · ' + t('brani.note', { n: b.note.length }) +
-          ' · ' + (b.difficolta > 1 ? t('brani.difficolta2') : t('brani.difficolta')) + '</small></div>' +
+          ' · ' + (b.difficolta > 1 ? t('brani.difficolta2') : t('brani.difficolta')) +
+          (b.locale ? ' · <b class="brano-tuo">' + t('brani.tuo') + '</b>' : '') + '</small></div>' +
           '<button class="btn piccolo" data-ascolta="' + b.chiave + '" title="' + t('brani.ascolta') + '">🎧</button>' +
           '<button class="btn piccolo primario" data-scegli="' + b.chiave + '">' + t('brani.gioca') + '</button>' +
           '</div>';
@@ -1237,6 +1259,7 @@
     I18n.avvia();
     T.setLingua(I18n.getLingua());
     caricaPreferenze();
+    caricaBraniLocali();
     App.notaStudio = T.STRINGS[1].open;
     applicaLingua();
     renderLevelPicker();

@@ -79,6 +79,33 @@ You can **listen to the whole piece first** (with its rhythm); then the app show
 by one on the staff: name each one, hear it played, and watch the melody build up note by note
 at the top of the screen. Wrong notes go into the mistakes review like everywhere else.
 
+#### Adding your own piece (kept out of the repository)
+
+Any piece you add yourself goes in **`js/brani-locali.js`**, a file that **git ignores**: it
+stays on your computer and never ends up on GitHub. Start from the template
+`js/brani-locali.example.js` (copy it to `js/brani-locali.js`), write your melody and reload the
+page: your pieces appear at the end of the list, marked "yours", in both *Classical pieces* and
+*Violin Hero*.
+
+```js
+window.Brani.aggiungi({
+  chiave: 'my-tune',                                  // short name, no spaces
+  titolo: 'My tune',                                  // shown in the list
+  autore: 'Me',
+  bpm: 76,                                            // can be changed while playing
+  note: [['E4', 1], ['G4', 1], ['A4', 2]]             // [note, beats]
+});
+```
+
+Notes can be written in English (`C4`, `F#4`) or Italian (`Do4`, `Fa#4`); the violin reference
+points are G3/D4/A4/E5 for the four open strings and C4 for middle C, and everything must stay
+between G3 and C6 in 1st position — a note that is not playable makes the piece be **refused**
+with a message in the console (F12) instead of breaking the games.
+
+> ⚠ **Copyright**: put only public-domain melodies, or ones you have the right to use, in there.
+> Melodies still under copyright (for example most modern liturgical songs) must not be
+> published — keeping them in this local file is exactly what it is for.
+
 ### 🎸 Violin Hero
 
 The notes of the chosen piece fall towards a line, each in the lane of the string where it is
@@ -214,6 +241,7 @@ js/audio.js           violin sound synthesis (Web Audio), effects, tuning
 js/staff.js           treble staff drawing (SVG)
 js/violin.js          interactive violin fingerboard (SVG)
 js/brani.js           public-domain pieces for the two music games
+js/brani-locali.example.js   template for your own melodies (not published, see above)
 js/games.js           game engine: questions, scoring, timing, turns (no DOM)
 js/eroe.js            Violin Hero engine: falling notes, timing and scoring
 js/app.js             interface, screens, wiring with the engine

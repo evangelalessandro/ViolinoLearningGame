@@ -144,8 +144,62 @@ window.Brani = (function () {
     return b.note.map(function (n) { return T.daNome(n[0]); });
   }
 
+  /* ------------------------------------------------------ brani dell'utente */
+  /** Avvisa nella console e dice di no: un brano sbagliato non deve rompere i giochi. */
+  function rifiuta(messaggio) {
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('Brani locali — brano non aggiunto: ' + messaggio);
+    }
+    return false;
+  }
+
+  /**
+   * Aggiunge un brano alla libreria: la usano i brani scritti a mano in
+   * `js/brani-locali.js` (file locale, fuori dal repository).
+   * Le note devono esistere e stare nella 1ª posizione del violino: se no il
+   * brano viene rifiutato con un avviso, invece di rompere i giochi.
+   * @param {object} b {chiave, titolo, autore, bpm, note: [[nota, battiti], …]}
+   * @returns {boolean} true se il brano è stato aggiunto
+   */
+  function aggiungi(b) {
+    if (!b || typeof b !== 'object') return rifiuta('non è un brano');
+    const chiave = String(b.chiave == null ? '' : b.chiave).trim();
+    if (!chiave) return rifiuta('manca la "chiave"');
+    if (PER_CHIAVE[chiave]) return rifiuta('la chiave "' + chiave + '" è già in uso');
+    if (!b.note || !b.note.length) return rifiuta('la lista "note" è vuota');
+
+    const sbagliate = [];
+    const note = [];
+    Array.prototype.forEach.call(b.note, function (n) {
+      const nome = (n && n.length) ? n[0] : null;
+      const battiti = Number(n && n[1]);
+      const nota = nome ? T.daNome(nome) : null;
+      if (!nota || !T.placementsFor(nota, 1).length) { sbagliate.push(String(nome)); return; }
+      note.push([String(nome), (battiti > 0 ? battiti : 1)]);
+    });
+    if (sbagliate.length) {
+      return rifiuta('note non suonabili in 1ª posizione (da Sol3 a Do6): ' + sbagliate.join(', '));
+    }
+
+    const tit = String(b.titolo || chiave);
+    const brano = {
+      chiave: chiave,
+      titolo: tit,
+      titoloEn: String(b.titoloEn || tit),
+      autore: String(b.autore || (T.getLingua() === 'en' ? 'Your piece' : 'Brano tuo')),
+      autoreEn: String(b.autoreEn || b.autore || 'Your piece'),
+      bpm: (Number(b.bpm) > 20 && Number(b.bpm) < 400) ? Number(b.bpm) : 90,
+      difficolta: Number(b.difficolta) === 2 ? 2 : 1,
+      note: note,
+      locale: true                       // aggiunto a mano: l'elenco lo segnala
+    };
+    BRANI.push(brano);
+    PER_CHIAVE[chiave] = brano;
+    return true;
+  }
+
   return {
     BRANI: BRANI, perChiave: perChiave, titolo: titolo, autore: autore,
-    durata: durata, noteDi: noteDi
+    durata: durata, noteDi: noteDi, aggiungi: aggiungi
   };
 })();

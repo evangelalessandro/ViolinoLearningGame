@@ -36,6 +36,25 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+/* Il file delle melodie scritte a mano: esiste solo sul computer di chi lo
+   crea, e git deve ignorarlo (il modello da copiare sì, invece). */
+const RADICE = path.join(__dirname, '..');
+const FILE_LOCALI = path.join(RADICE, 'js', 'brani-locali.js');
+const FILE_ESEMPIO = path.join(RADICE, 'js', 'brani-locali.example.js');
+try { fs.unlinkSync(FILE_LOCALI); } catch (e) { /* non c'era: bene */ }
+
+/** true se git ignora il file indicato (così non finisce su GitHub). */
+function ignoraGit(percorso) {
+  try {
+    const r = require('child_process').spawnSync('git', ['check-ignore', '-q', percorso],
+      { cwd: RADICE, stdio: 'ignore' });
+    if (r.error) return 'git non disponibile';
+    return r.status === 0;
+  } catch (e) {
+    return 'git non disponibile';
+  }
+}
+
 /* --------------------------------------------------------------- parametri */
 const args = process.argv.slice(2);
 function arg(nome, predefinito) {
@@ -671,6 +690,64 @@ if (!CHROME) {
     await clickVero('[data-liv="ragazzi"]');
     await attesa(300);
 
+    /* -------------------------------------------------- brani dell'utente */
+    /* Il file delle melodie scritte a mano deve restare fuori dal repository
+       e, se c'è, il brano deve comparire e suonare come gli altri. */
+    console.log('── Brani tuoi (fuori dal repository) ' + '─'.repeat(24));
+    fs.writeFileSync(FILE_LOCALI, [
+      '/* brano di prova scritto dal test */',
+      'window.Brani.aggiungi({',
+      "  chiave: 'prova-locale',",
+      "  titolo: 'Melodia di prova',",
+      "  autore: 'Test',",
+      '  bpm: 80,',
+      "  note: [['Do4', 1], ['Re4', 1], ['Mi4', 1], ['Sol4', 2], ['La4', 1]]",
+      '});',
+      ''
+    ].join('\n'), 'utf8');
+    const ignorato = ignoraGit('js/brani-locali.js');
+    if (ignorato === true) {
+      ok('git ignora js/brani-locali.js (non finisce su GitHub)', true, 'ignorato');
+    } else if (ignorato === false) {
+      ok('git ignora js/brani-locali.js (non finisce su GitHub)', false, 'NON ignorato');
+    } else {
+      console.log('  ·   ' + ignorato + ': non posso controllare che js/brani-locali.js sia ignorato');
+    }
+    check('il modello da copiare è pubblicato', fs.existsSync(FILE_ESEMPIO) &&
+      ignoraGit('js/brani-locali.example.js') !== true, true);
+    await invia('Page.navigate', { url: URL_APP });
+    await attesa(1200);
+    await clickVero('[data-modo="brano"]');
+    await attesa(400);
+    await attendiStato('window.Brani && Brani.perChiave("prova-locale")', 5000);
+    check('il brano locale compare nell\'elenco', await valuta('return document.querySelectorAll(".brano-riga").length;'), 8);
+    check('è segnato come "tuo"', await valuta(
+      'var r=Array.from(document.querySelectorAll(".brano-riga")).filter(function(e){' +
+      '  return e.querySelector(".brano-info b").textContent === "Melodia di prova"; })[0];' +
+      'if (!r) return "assente";' +
+      'var t=r.querySelector(".brano-tuo"); return t ? t.textContent : "senza segno";'), 'tuo');
+    await clickVero('[data-scegli="prova-locale"]');
+    await attesa(700);
+    check('il brano locale si gioca come gli altri', await valuta(
+      'return App.sessione.brano.chiave + "|" + App.sessione.totale;'), 'prova-locale|5');
+    check('la prima nota è quella scritta', await valuta(
+      'var s=App.sessione; s.indice=0; return Theory.solfegeOttava(s.creaDomanda().nota);'), 'Do4');
+    check('niente errori con il brano locale', await valuta('return window.__errori || [];'), []);
+    await clickVero('#btn-esci');
+    await attesa(400);
+
+    // senza il file si torna alla libreria di prima, senza errori
+    fs.unlinkSync(FILE_LOCALI);
+    await invia('Page.navigate', { url: URL_APP });
+    await attesa(1200);
+    check('senza il file non c\'è nessun brano locale', await valuta('return Brani.perChiave("prova-locale");'), null);
+    await clickVero('[data-modo="brano"]');
+    await attesa(400);
+    check('e l\'elenco torna a sette brani', await valuta('return document.querySelectorAll(".brano-riga").length;'), 7);
+    check('il file mancante non dà errori', await valuta('return window.__errori || [];'), []);
+    await clickVero('#brani-annulla');
+    await attesa(300);
+
     /* Nessuna scritta "undefined"/"NaN" dev'essere visibile: è il sintomo tipico
        di una proprietà scritta con un nome diverso da quello usato nell'interfaccia. */
     console.log('── Nessuna scritta "undefined" a schermo ' + '─'.repeat(25));
@@ -720,6 +797,7 @@ if (!CHROME) {
     console.log('ERRORE: ' + e.message);
     problemi++;
   } finally {
+    try { fs.unlinkSync(FILE_LOCALI); } catch (e) { /* già tolto */ }
     try { ws && ws.close(); } catch (e) { }
     chrome.kill();
     setTimeout(function () { process.exit(problemi ? 1 : 0); }, 200);
